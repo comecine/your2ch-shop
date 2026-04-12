@@ -97,18 +97,24 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
   async function loadStats() {
     try {
-      const res = await fetch('/api/admin/stats', { credentials: 'include' });
-      if (res.status === 401) { window.location.href = '/admin/login'; return; }
-      if (!res.ok) return;
-      const data = await res.json();
+      const [statsRes, ordersRes, inventoryRes] = await Promise.all([
+        fetch('/api/admin/stats', { credentials: 'include' }),
+        fetch('/api/admin/orders?limit=5&sort=newest', { credentials: 'include' }),
+        fetch('/api/admin/inventory?low_stock=1&limit=8', { credentials: 'include' }),
+      ]);
+      if (statsRes.status === 401) { window.location.href = '/admin/login'; return; }
 
-      document.getElementById('stat-orders')!.textContent = String(data.total_orders || 0);
-      document.getElementById('stat-users')!.textContent = String(data.total_users || 0);
-      document.getElementById('stat-products')!.textContent = String(data.total_products || 0);
-      document.getElementById('stat-revenue')!.textContent = `¥${parseFloat(data.month_revenue || 0).toFixed(0)}`;
+      const statsJson = await statsRes.json();
+      const stats = statsJson.data || {};
+
+      document.getElementById('stat-orders')!.textContent = String(stats.total_orders || 0);
+      document.getElementById('stat-users')!.textContent = String(stats.total_users || 0);
+      document.getElementById('stat-products')!.textContent = String(stats.total_products || 0);
+      document.getElementById('stat-revenue')!.textContent = `¥${parseFloat(stats.monthly_sales || 0).toFixed(0)}`;
 
       // 最近订单
-      const orders = data.recent_orders || [];
+      const ordersJson = ordersRes.ok ? await ordersRes.json() : {};
+      const orders = ordersJson.data?.orders || [];
       const tbody = document.getElementById('recent-orders')!;
       tbody.innerHTML = orders.length ? orders.slice(0, 5).map((o: any) => `
         <tr>
@@ -116,20 +122,18 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           <td>${o.username || o.user_id}</td>
           <td class="font-bold text-gray-900">¥${parseFloat(o.total_amount).toFixed(2)}</td>
           <td><span class="${statusClass[o.status] || 'badge-gray'}">${statusMap[o.status] || o.status}</span></td>
-          <td class="text-xs text-gray-400">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td>
+          <td class="text-xs text-gray-400">${new Date(o.created_at * 1000).toLocaleDateString('zh-CN')}</td>
           <td><a href="/admin/orders/${o.id}" class="text-primary text-xs hover:underline">查看</a></td>
         </tr>
       `).join('') : '<tr><td colspan="6" class="text-center text-gray-400 py-8">暂无订单</td></tr>';
 
       // 低库存
-      const lowStock = data.low_stock || [];
+      const inventoryJson = inventoryRes.ok ? await inventoryRes.json() : {};
+      const lowStock = inventoryJson.data?.inventory || [];
       const lowStockEl = document.getElementById('low-stock-list')!;
       lowStockEl.innerHTML = lowStock.length ? lowStock.slice(0, 8).map((p: any) => `
         <div class="flex items-center gap-3 p-2.5 rounded-lg ${p.stock === 0 ? 'bg-red-50' : 'bg-orange-50'}">
-          <img src="${p.main_image || 'https://placehold.co/40x40/dcfce7/16a34a?text=图'}"
-            class="w-10 h-10 rounded-lg object-cover flex-shrink-0"
-            onerror="this.src='https://placehold.co/40x40/dcfce7/16a34a?text=图'"
-          />
+          <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 text-lg">📦</div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-medium text-gray-800 line-clamp-1">${p.name}</div>
             <div class="text-xs ${p.stock === 0 ? 'text-red-600 font-bold' : 'text-orange-600'}">库存：${p.stock}</div>

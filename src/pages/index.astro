@@ -172,7 +172,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       <div class="card group cursor-pointer hover:shadow-md transition-shadow duration-200">
         <a href="/products/${product.slug}" class="block">
           <div class="relative overflow-hidden bg-gray-50 aspect-square">
-            <img src="${product.main_image || 'https://placehold.co/400x400/dcfce7/16a34a?text=暂无图片'}"
+            <img src="${product.image_url || 'https://placehold.co/400x400/dcfce7/16a34a?text=暂无图片'}"
               alt="${product.name}"
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               loading="lazy"
@@ -189,7 +189,7 @@ import MainLayout from '../layouts/MainLayout.astro';
               <span class="text-lg font-bold text-red-500">¥${parseFloat(product.price).toFixed(2)}</span>
               ${product.original_price && product.original_price > product.price ? `<span class="text-xs text-gray-400 line-through">¥${parseFloat(product.original_price).toFixed(2)}</span>` : ''}
             </div>
-            ${product.sales_count > 0 ? `<div class="text-xs text-gray-400">已售 ${product.sales_count}</div>` : ''}
+            ${product.sales > 0 ? `<div class="text-xs text-gray-400">已售 ${product.sales}</div>` : ''}
           </div>
         </a>
         <div class="px-3 pb-3">
@@ -308,7 +308,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       const res = await fetch(`/api/products?${queryStr}`, { credentials: 'include' });
       if (!res.ok) return;
       const data = await res.json();
-      const products = data.products || data || [];
+      const products = data.data?.products || [];
       const container = document.getElementById(containerId);
       if (!container) return;
 

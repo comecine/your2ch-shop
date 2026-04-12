@@ -51,14 +51,14 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       const res = await fetch(`/api/admin/products?${params}`, { credentials: 'include' });
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       const data = await res.json();
-      const products = data.products || data || [];
-      const total = data.total || products.length;
-      const totalPages = data.total_pages || Math.ceil(total / 15);
+      const products = data.data?.products || [];
+      const total = data.data?.total || products.length;
+      const totalPages = data.data?.totalPages || Math.ceil(total / 15);
 
       tbody.innerHTML = products.length ? products.map((p: any) => `
         <tr>
           <td>
-            <img src="${p.main_image || 'https://placehold.co/40x40/dcfce7/16a34a?text=图'}"
+            <img src="${p.image_url || 'https://placehold.co/40x40/dcfce7/16a34a?text=图'}"
               class="w-10 h-10 rounded-lg object-cover"
               onerror="this.src='https://placehold.co/40x40/dcfce7/16a34a?text=图'"
             />
@@ -75,7 +75,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           <td>
             <span class="${p.stock === 0 ? 'text-red-500 font-bold' : p.stock < 10 ? 'text-orange-500 font-medium' : 'text-gray-700'}">${p.stock}</span>
           </td>
-          <td class="text-sm text-gray-600">${p.sales_count || 0}</td>
+          <td class="text-sm text-gray-600">${p.sales || 0}</td>
           <td>
             <span class="${p.status === 'active' || p.is_active ? 'badge-green' : 'badge-gray'}">
               ${p.status === 'active' || p.is_active ? '上架' : '下架'}

@@ -58,8 +58,8 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       const res = await fetch(`/api/admin/inventory?${params}`, { credentials: 'include' });
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       const data = await res.json();
-      const products = data.products || data || [];
-      const totalPages = data.total_pages || 1;
+      const products = data.data?.inventory || [];
+      const totalPages = data.data?.totalPages || 1;
 
       tbody.innerHTML = products.length ? products.map((p: any) => {
         const isLow = p.stock < 10;
@@ -68,7 +68,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           <tr class="${isOut ? 'bg-red-50' : isLow ? 'bg-orange-50' : ''}">
             <td>
               <div class="flex items-center gap-3">
-                <img src="${p.main_image || 'https://placehold.co/40x40/dcfce7/16a34a?text=图'}"
+                <img src="https://placehold.co/40x40/dcfce7/16a34a?text=图"
                   class="w-10 h-10 rounded-lg object-cover flex-shrink-0"
                   onerror="this.src='https://placehold.co/40x40/dcfce7/16a34a?text=图'"
                 />
@@ -96,7 +96,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
                 </div>
               </div>
             </td>
-            <td class="text-sm text-gray-600">${p.sales_count || 0}</td>
+            <td class="text-sm text-gray-600">${p.sales || 0}</td>
             <td>
               <a href="/admin/products/${p.id}" class="text-primary text-xs hover:underline">编辑商品</a>
             </td>

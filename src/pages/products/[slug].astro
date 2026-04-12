@@ -197,7 +197,7 @@ const { slug } = Astro.params;
 
       // 图片
       const mainImg = document.getElementById('main-image') as HTMLImageElement;
-      const images = product.images && product.images.length > 0 ? product.images : (product.main_image ? [product.main_image] : []);
+      const images = product.images && product.images.length > 0 ? product.images : (product.image_url ? [product.image_url] : []);
 
       if (images.length > 0) {
         mainImg.src = images[0];
@@ -238,7 +238,7 @@ const { slug } = Astro.params;
       const res = await fetch(`/api/products?category=${category}&limit=5`, { credentials: 'include' });
       if (!res.ok) return;
       const data = await res.json();
-      const products = (data.products || data || []).filter((p: any) => p.id !== currentId);
+      const products = (data.data?.products || []).filter((p: any) => p.id !== currentId);
 
       const container = document.getElementById('related-products')!;
       if (!products.length) {
@@ -249,7 +249,7 @@ const { slug } = Astro.params;
       container.innerHTML = products.slice(0, 5).map((p: any) => `
         <a href="/products/${p.slug}" class="card group hover:shadow-md transition-shadow">
           <div class="aspect-square overflow-hidden bg-gray-50">
-            <img src="${p.main_image || 'https://placehold.co/200x200/dcfce7/16a34a?text=图片'}"
+            <img src="${p.image_url || 'https://placehold.co/200x200/dcfce7/16a34a?text=图片'}"
               alt="${p.name}"
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               onerror="this.src='https://placehold.co/200x200/dcfce7/16a34a?text=图片'"
