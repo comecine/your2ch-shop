@@ -211,7 +211,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       const res = await fetch('/api/banners', { credentials: 'include' });
       if (!res.ok) return;
       const data = await res.json();
-      const banners = data.banners || data || [];
+      const banners = data.data?.banners || [];
       if (!banners.length) return;
 
       const container = document.getElementById('banner-slides');
@@ -287,7 +287,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       const res = await fetch('/api/categories', { credentials: 'include' });
       if (!res.ok) return;
       const data = await res.json();
-      const categories = data.categories || data || [];
+      const categories = data.data?.categories || [];
       const container = document.getElementById('category-icons');
       if (!container || !categories.length) return;
 
