@@ -129,7 +129,8 @@ const { slug } = Astro.params;
   </div>
 </MainLayout>
 
-<script define:vars={{ slug }}>
+<script>
+  const slug = window.location.pathname.split('/').filter(Boolean).pop() || '';
   let maxStock = 999;
 
   async function loadProduct() {
