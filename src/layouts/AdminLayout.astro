@@ -1,0 +1,187 @@
+---
+import '../styles/global.css';
+
+export interface Props {
+  title?: string;
+}
+
+const { title = '管理后台' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} - 绿巢生活館管理后台</title>
+</head>
+<body class="min-h-screen bg-gray-100 flex">
+
+  <!-- 侧边导航 -->
+  <aside class="w-64 min-h-screen bg-gray-900 text-gray-200 flex flex-col flex-shrink-0 fixed left-0 top-0 bottom-0 z-30 overflow-y-auto">
+    <!-- Logo -->
+    <div class="px-6 py-5 border-b border-gray-700">
+      <a href="/admin/" class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+          <svg viewBox="0 0 24 24" class="w-4 h-4 text-white fill-current">
+            <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20C19 20 22 3 22 3c-1 2-8 2-8 2 2-2 2-4 2-4-5 0-9 4-9 10a9.09 9.09 0 00.1 1.42C2.82 14.49 3 12 3 12 2 17 3.5 19 3.5 19" />
+          </svg>
+        </div>
+        <div>
+          <div class="text-sm font-bold text-white">绿巢生活館</div>
+          <div class="text-xs text-gray-400">管理后台</div>
+        </div>
+      </a>
+    </div>
+
+    <!-- 管理员信息 -->
+    <div class="px-6 py-4 border-b border-gray-700">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-primary rounded-full flex items-center justify-center text-white font-medium text-sm">
+          A
+        </div>
+        <div>
+          <div id="admin-name" class="text-sm font-medium text-white">管理员</div>
+          <div class="text-xs text-gray-400">超级管理员</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 导航菜单 -->
+    <nav class="flex-1 px-3 py-4">
+      <ul class="space-y-1">
+        <li>
+          <a href="/admin/" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-gray-800 hover:text-white">
+            <span class="text-lg">🏠</span>
+            <span>仪表盘</span>
+          </a>
+        </li>
+        <li>
+          <a href="/admin/products/" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-gray-800 hover:text-white">
+            <span class="text-lg">📦</span>
+            <span>商品管理</span>
+          </a>
+        </li>
+        <li>
+          <a href="/admin/orders/" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-gray-800 hover:text-white">
+            <span class="text-lg">📋</span>
+            <span>订单管理</span>
+          </a>
+        </li>
+        <li>
+          <a href="/admin/users/" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-gray-800 hover:text-white">
+            <span class="text-lg">👥</span>
+            <span>会员管理</span>
+          </a>
+        </li>
+        <li>
+          <a href="/admin/categories/" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-gray-800 hover:text-white">
+            <span class="text-lg">📁</span>
+            <span>分类管理</span>
+          </a>
+        </li>
+        <li>
+          <a href="/admin/banners/" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-gray-800 hover:text-white">
+            <span class="text-lg">🖼️</span>
+            <span>Banner管理</span>
+          </a>
+        </li>
+        <li>
+          <a href="/admin/inventory/" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-gray-800 hover:text-white">
+            <span class="text-lg">📊</span>
+            <span>库存管理</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- 退出按钮 -->
+    <div class="px-3 py-4 border-t border-gray-700">
+      <button id="admin-logout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-900/30 hover:text-red-300 transition-colors">
+        <span class="text-lg">🚪</span>
+        <span>退出登录</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- 主内容区 -->
+  <div class="flex-1 ml-64 flex flex-col min-h-screen">
+    <!-- 顶部栏 -->
+    <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+      <div>
+        <h1 class="text-lg font-semibold text-gray-800">{title}</h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="/" target="_blank" class="text-sm text-gray-500 hover:text-primary transition-colors flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+          查看前台
+        </a>
+        <div class="text-sm text-gray-500" id="current-time"></div>
+      </div>
+    </header>
+
+    <!-- 页面内容 -->
+    <main class="flex-1 p-6">
+      <slot />
+    </main>
+  </div>
+
+</body>
+</html>
+
+<script>
+  // 检查 admin token
+  const adminToken = document.cookie.includes('admin_token=');
+  if (!adminToken && !window.location.pathname.includes('/admin/login')) {
+    window.location.href = '/admin/login';
+  }
+
+  // 高亮当前页面菜单项
+  const currentPath = window.location.pathname;
+  document.querySelectorAll('.nav-item').forEach((item: Element) => {
+    const href = (item as HTMLAnchorElement).getAttribute('href');
+    if (href && currentPath === href) {
+      item.classList.add('bg-primary', 'text-white');
+      item.classList.remove('hover:bg-gray-800');
+    }
+  });
+
+  // 退出登录
+  document.getElementById('admin-logout')?.addEventListener('click', async () => {
+    document.cookie = 'admin_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    try {
+      await fetch('/api/admin/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (e) {}
+    window.location.href = '/admin/login';
+  });
+
+  // 时间显示
+  function updateTime() {
+    const el = document.getElementById('current-time');
+    if (el) {
+      el.textContent = new Date().toLocaleString('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        hour12: false,
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+  }
+  updateTime();
+  setInterval(updateTime, 60000);
+
+  // 加载管理员信息
+  async function loadAdminInfo() {
+    try {
+      const res = await fetch('/api/admin/auth/me', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        const el = document.getElementById('admin-name');
+        if (el && data.username) el.textContent = data.username;
+      }
+    } catch (e) {}
+  }
+  loadAdminInfo();
+</script>

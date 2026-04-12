@@ -1,0 +1,172 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+const { id } = Astro.params;
+---
+
+<AdminLayout title="订单详情">
+  <div class="max-w-3xl">
+    <div class="flex items-center gap-3 mb-5">
+      <a href="/admin/orders/" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      </a>
+      <h2 class="text-lg font-semibold text-gray-800">订单详情</h2>
+    </div>
+
+    <div id="loading" class="flex justify-center py-12">
+      <svg class="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+      </svg>
+    </div>
+
+    <div id="order-content" class="hidden space-y-5"></div>
+  </div>
+</AdminLayout>
+
+<script define:vars={{ id }}>
+  const statusOptions = [
+    { value: 'pending', label: '待确认' },
+    { value: 'confirmed', label: '已确认' },
+    { value: 'shipped', label: '已发货' },
+    { value: 'completed', label: '已完成' },
+    { value: 'cancelled', label: '已取消' },
+  ];
+
+  async function loadOrder() {
+    try {
+      const res = await fetch(`/api/admin/orders/${id}`, { credentials: 'include' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      if (!res.ok) { window.location.href = '/admin/orders/'; return; }
+      const data = await res.json();
+      const order = data.order || data;
+      const items = order.items || [];
+
+      document.getElementById('loading')!.classList.add('hidden');
+      const content = document.getElementById('order-content')!;
+      content.classList.remove('hidden');
+
+      content.innerHTML = `
+        <!-- 状态修改 -->
+        <div class="card p-5">
+          <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <div class="text-sm text-gray-500 mb-1">订单号：<span class="font-mono text-gray-800">${order.order_no || order.id}</span></div>
+              <div class="text-sm text-gray-500">下单时间：${new Date(order.created_at).toLocaleString('zh-CN')}</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <select id="status-select" class="input-field max-w-[150px] py-2 text-sm">
+                ${statusOptions.map(opt => `<option value="${opt.value}" ${opt.value === order.status ? 'selected' : ''}>${opt.label}</option>`).join('')}
+              </select>
+              <button id="update-status-btn" class="btn-primary btn-sm">确认修改</button>
+            </div>
+          </div>
+          <div id="status-msg" class="hidden mt-3 text-sm text-primary"></div>
+        </div>
+
+        <!-- 订单信息 -->
+        <div class="card p-5">
+          <h3 class="font-medium text-gray-800 mb-3">订单信息</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div><span class="text-gray-500">用户：</span>${order.username || order.user_id}</div>
+            <div><span class="text-gray-500">支付方式：</span>银行转账</div>
+            ${order.remark ? `<div class="col-span-2"><span class="text-gray-500">备注：</span>${order.remark}</div>` : ''}
+          </div>
+        </div>
+
+        <!-- 收货地址 -->
+        ${order.address ? `
+        <div class="card p-5">
+          <h3 class="font-medium text-gray-800 mb-3">收货地址</h3>
+          <div class="text-sm">
+            <div class="flex gap-3 mb-1"><span class="font-medium">${order.address.name}</span><span>${order.address.phone}</span></div>
+            <div class="text-gray-500">${order.address.province || ''}${order.address.city || ''}${order.address.district || ''} ${order.address.detail || ''}</div>
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- 商品明细 -->
+        <div class="card overflow-hidden">
+          <div class="p-5 border-b border-gray-100">
+            <h3 class="font-medium text-gray-800">商品明细</h3>
+          </div>
+          <table class="table-default">
+            <thead>
+              <tr>
+                <th>商品</th>
+                <th>单价</th>
+                <th>数量</th>
+                <th class="text-right">小计</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map((item: any) => `
+                <tr>
+                  <td>
+                    <div class="flex items-center gap-3">
+                      <img src="${item.product_image || 'https://placehold.co/40x40/dcfce7/16a34a?text=图'}" class="w-10 h-10 rounded-lg object-cover" onerror="this.src='https://placehold.co/40x40/dcfce7/16a34a?text=图'" />
+                      <span class="text-sm">${item.product_name}</span>
+                    </div>
+                  </td>
+                  <td>¥${parseFloat(item.price).toFixed(2)}</td>
+                  <td>${item.quantity}</td>
+                  <td class="text-right font-bold">¥${(parseFloat(item.price) * item.quantity).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+            <tfoot>
+              <tr class="bg-gray-50">
+                <td colspan="3" class="text-right font-medium text-gray-700">运费</td>
+                <td class="text-right">${parseFloat(order.shipping_fee || 0) === 0 ? '免运费' : '¥' + parseFloat(order.shipping_fee).toFixed(2)}</td>
+              </tr>
+              <tr class="bg-gray-50">
+                <td colspan="3" class="text-right font-bold text-gray-900">合计</td>
+                <td class="text-right font-bold text-red-500 text-lg">¥${parseFloat(order.total_amount).toFixed(2)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      `;
+
+      document.getElementById('update-status-btn')?.addEventListener('click', async () => {
+        const newStatus = (document.getElementById('status-select') as HTMLSelectElement).value;
+        const btn = document.getElementById('update-status-btn') as HTMLButtonElement;
+        const msgEl = document.getElementById('status-msg')!;
+        btn.disabled = true;
+        btn.textContent = '更新中...';
+
+        try {
+          const res = await fetch(`/api/admin/orders/${id}`, {
+            method: 'PUT', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+          });
+
+          if (res.ok) {
+            msgEl.textContent = '状态已更新！';
+            msgEl.className = 'mt-3 text-sm text-primary';
+            msgEl.classList.remove('hidden');
+          } else {
+            const d = await res.json().catch(() => ({}));
+            msgEl.textContent = d.message || '更新失败';
+            msgEl.className = 'mt-3 text-sm text-red-500';
+            msgEl.classList.remove('hidden');
+          }
+        } catch {
+          msgEl.textContent = '网络错误';
+          msgEl.className = 'mt-3 text-sm text-red-500';
+          msgEl.classList.remove('hidden');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '确认修改';
+          setTimeout(() => msgEl.classList.add('hidden'), 3000);
+        }
+      });
+    } catch {
+      document.getElementById('loading')!.innerHTML = '<div class="text-center py-12 text-gray-400">加载失败</div>';
+    }
+  }
+
+  loadOrder();
+</script>

@@ -1,0 +1,145 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+---
+
+<MainLayout title="我的订单">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">我的订单</h1>
+
+    <!-- 状态 Tab -->
+    <div class="flex overflow-x-auto border-b border-gray-200 mb-5 gap-0">
+      {[
+        { key: '', label: '全部' },
+        { key: 'pending', label: '待确认' },
+        { key: 'confirmed', label: '已确认' },
+        { key: 'shipped', label: '已发货' },
+        { key: 'completed', label: '已完成' },
+        { key: 'cancelled', label: '已取消' },
+      ].map(tab => (
+        <button
+          class={`status-tab flex-shrink-0 px-5 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap`}
+          data-status={tab.key}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+
+    <!-- 订单列表 -->
+    <div id="orders-loading" class="flex justify-center py-12">
+      <svg class="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+      </svg>
+    </div>
+
+    <div id="orders-empty" class="hidden text-center py-16">
+      <div class="text-5xl mb-3">📋</div>
+      <p class="text-gray-500">暂无相关订单</p>
+      <a href="/products" class="btn-primary mt-4 inline-block">去选购商品</a>
+    </div>
+
+    <div id="orders-list" class="hidden space-y-4"></div>
+  </div>
+</MainLayout>
+
+<script>
+  const statusMap: Record<string, { label: string; class: string }> = {
+    pending: { label: '待确认', class: 'badge-yellow' },
+    confirmed: { label: '已确认', class: 'badge-blue' },
+    shipped: { label: '已发货', class: 'badge-green' },
+    completed: { label: '已完成', class: 'badge bg-gray-100 text-gray-600' },
+    cancelled: { label: '已取消', class: 'badge-red' },
+  };
+
+  let currentStatus = new URLSearchParams(window.location.search).get('status') || '';
+
+  async function loadOrders() {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!res.ok) { window.location.href = '/account/login?redirect=/account/orders'; return; }
+
+      const params = currentStatus ? `?status=${currentStatus}` : '';
+      const orderRes = await fetch(`/api/orders${params}`, { credentials: 'include' });
+      const data = await orderRes.json();
+      const orders = data.orders || data || [];
+
+      document.getElementById('orders-loading')!.classList.add('hidden');
+
+      if (!orders.length) {
+        document.getElementById('orders-empty')!.classList.remove('hidden');
+        return;
+      }
+
+      const list = document.getElementById('orders-list')!;
+      list.classList.remove('hidden');
+      list.innerHTML = orders.map((order: any) => {
+        const status = statusMap[order.status] || { label: order.status, class: 'badge-gray' };
+        const items = order.items || [];
+        return `
+          <div class="card overflow-hidden">
+            <div class="bg-gray-50 px-5 py-3 flex items-center justify-between border-b border-gray-100">
+              <div class="flex items-center gap-3">
+                <span class="text-sm text-gray-500">订单号：<span class="font-mono text-gray-700">${order.order_no || order.id}</span></span>
+                <span class="text-xs text-gray-400">${new Date(order.created_at).toLocaleDateString('zh-CN')}</span>
+              </div>
+              <span class="${status.class}">${status.label}</span>
+            </div>
+            <div class="p-5">
+              <!-- 商品缩略图 -->
+              <div class="flex items-center gap-3 mb-4">
+                <div class="flex gap-2 overflow-x-auto">
+                  ${items.slice(0, 4).map((item: any) => `
+                    <img src="${item.product_image || 'https://placehold.co/60x60/dcfce7/16a34a?text=图'}"
+                      alt="${item.product_name}"
+                      class="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                      onerror="this.src='https://placehold.co/60x60/dcfce7/16a34a?text=图'"
+                    />
+                  `).join('')}
+                  ${items.length > 4 ? `<div class="w-14 h-14 rounded-lg bg-gray-100 flex items-center justify-center text-sm text-gray-400 flex-shrink-0">+${items.length - 4}</div>` : ''}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm text-gray-700 line-clamp-1">${items[0]?.product_name || '商品'}${items.length > 1 ? ` 等${items.length}件` : ''}</div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-500">共 ${items.reduce((sum: number, i: any) => sum + i.quantity, 0)} 件商品，实付 <span class="text-red-500 font-bold text-base">¥${parseFloat(order.total_amount).toFixed(2)}</span></div>
+                <a href="/account/orders/${order.id}" class="btn-outline btn-sm">查看详情</a>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      window.location.href = '/account/login?redirect=/account/orders';
+    }
+  }
+
+  // Tab 切换
+  document.querySelectorAll('.status-tab').forEach(tab => {
+    const status = (tab as HTMLButtonElement).dataset.status || '';
+    if (status === currentStatus) {
+      tab.classList.add('border-primary', 'text-primary');
+      tab.classList.add('-mb-px');
+    } else {
+      tab.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700');
+    }
+
+    tab.addEventListener('click', () => {
+      currentStatus = status;
+      document.querySelectorAll('.status-tab').forEach(t => {
+        t.classList.remove('border-primary', 'text-primary', '-mb-px');
+        t.classList.add('border-transparent', 'text-gray-500');
+      });
+      tab.classList.add('border-primary', 'text-primary', '-mb-px');
+      tab.classList.remove('border-transparent', 'text-gray-500');
+
+      document.getElementById('orders-list')!.classList.add('hidden');
+      document.getElementById('orders-empty')!.classList.add('hidden');
+      document.getElementById('orders-loading')!.classList.remove('hidden');
+      loadOrders();
+    });
+  });
+
+  loadOrders();
+</script>

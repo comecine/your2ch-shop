@@ -1,0 +1,219 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Banner管理">
+  <div class="flex items-center justify-between mb-5">
+    <p class="text-sm text-gray-500">管理首页 Banner 轮播图</p>
+    <button id="show-add-form" class="btn-primary">+ 新增 Banner</button>
+  </div>
+
+  <!-- 表单 -->
+  <div id="banner-form" class="hidden card p-5 mb-5">
+    <h3 id="form-title" class="font-medium text-gray-800 mb-4">新增 Banner</h3>
+    <input type="hidden" id="edit-id" value="" />
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">标题</label>
+        <input type="text" id="banner-title" class="input-field" placeholder="Banner 标题（选填）" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">副标题</label>
+        <input type="text" id="banner-subtitle" class="input-field" placeholder="副标题（选填）" />
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">图片 URL <span class="text-red-500">*</span></label>
+        <input type="url" id="banner-image" class="input-field" placeholder="https://..." />
+        <div id="banner-preview" class="hidden mt-2 rounded-lg overflow-hidden" style="height:120px;">
+          <img id="banner-img-preview" class="w-full h-full object-cover" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">链接 URL</label>
+        <input type="text" id="banner-link" class="input-field" placeholder="/products（选填）" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">排序</label>
+        <input type="number" id="banner-sort" class="input-field" placeholder="0" min="0" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">状态</label>
+        <select id="banner-status" class="input-field">
+          <option value="active">显示</option>
+          <option value="inactive">隐藏</option>
+        </select>
+      </div>
+    </div>
+    <div id="form-error" class="hidden mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600"></div>
+    <div class="flex gap-3 mt-4">
+      <button id="save-banner" class="btn-primary">保存</button>
+      <button id="cancel-form" class="btn-outline">取消</button>
+    </div>
+  </div>
+
+  <!-- Banner 列表 -->
+  <div class="card overflow-hidden">
+    <table class="table-default">
+      <thead>
+        <tr>
+          <th>预览</th>
+          <th>标题</th>
+          <th>链接</th>
+          <th>排序</th>
+          <th>状态</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="banners-table">
+        <tr><td colspan="6" class="text-center py-8 text-gray-400">加载中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</AdminLayout>
+
+<script>
+  let banners: any[] = [];
+
+  async function loadBanners() {
+    try {
+      const res = await fetch('/api/admin/banners', { credentials: 'include' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      banners = data.banners || data || [];
+      renderTable();
+    } catch {
+      document.getElementById('banners-table')!.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">加载失败</td></tr>';
+    }
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('banners-table')!;
+    tbody.innerHTML = banners.length ? banners.map(b => `
+      <tr>
+        <td>
+          <img src="${b.image_url}" alt="${b.title || 'Banner'}"
+            class="w-24 h-14 object-cover rounded-lg"
+            onerror="this.src='https://placehold.co/96x56/dcfce7/16a34a?text=Banner'"
+          />
+        </td>
+        <td>
+          <div class="font-medium text-sm">${b.title || '-'}</div>
+          ${b.subtitle ? `<div class="text-xs text-gray-400">${b.subtitle}</div>` : ''}
+        </td>
+        <td class="text-xs text-gray-500 font-mono">${b.link_url || '-'}</td>
+        <td class="text-sm">${b.sort_order || 0}</td>
+        <td><span class="${b.status === 'active' || b.is_active !== false ? 'badge-green' : 'badge-gray'}">${b.status === 'active' || b.is_active !== false ? '显示' : '隐藏'}</span></td>
+        <td>
+          <div class="flex gap-3">
+            <button class="edit-banner text-primary text-xs hover:underline" data-id="${b.id}">编辑</button>
+            <button class="delete-banner text-red-400 text-xs hover:text-red-600" data-id="${b.id}">删除</button>
+          </div>
+        </td>
+      </tr>
+    `).join('') : '<tr><td colspan="6" class="text-center py-8 text-gray-400">暂无 Banner</td></tr>';
+
+    tbody.querySelectorAll('.edit-banner').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = parseInt((btn as HTMLButtonElement).dataset.id || '0');
+        const b = banners.find(x => x.id === id);
+        if (!b) return;
+        (document.getElementById('edit-id') as HTMLInputElement).value = String(id);
+        (document.getElementById('banner-title') as HTMLInputElement).value = b.title || '';
+        (document.getElementById('banner-subtitle') as HTMLInputElement).value = b.subtitle || '';
+        (document.getElementById('banner-image') as HTMLInputElement).value = b.image_url || '';
+        (document.getElementById('banner-link') as HTMLInputElement).value = b.link_url || '';
+        (document.getElementById('banner-sort') as HTMLInputElement).value = b.sort_order || '0';
+        (document.getElementById('banner-status') as HTMLSelectElement).value = b.status || 'active';
+        showImagePreview(b.image_url);
+        document.getElementById('form-title')!.textContent = '编辑 Banner';
+        document.getElementById('banner-form')!.classList.remove('hidden');
+        document.getElementById('banner-form')!.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    tbody.querySelectorAll('.delete-banner').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('确定删除此 Banner？')) return;
+        const id = (btn as HTMLButtonElement).dataset.id;
+        try {
+          const res = await fetch(`/api/admin/banners/${id}`, { method: 'DELETE', credentials: 'include' });
+          if (res.ok) loadBanners();
+        } catch {}
+      });
+    });
+  }
+
+  function showImagePreview(url: string) {
+    const preview = document.getElementById('banner-preview')!;
+    const img = document.getElementById('banner-img-preview') as HTMLImageElement;
+    if (url) {
+      img.src = url;
+      preview.classList.remove('hidden');
+    } else {
+      preview.classList.add('hidden');
+    }
+  }
+
+  document.getElementById('banner-image')?.addEventListener('input', (e) => {
+    showImagePreview((e.target as HTMLInputElement).value.trim());
+  });
+
+  document.getElementById('show-add-form')?.addEventListener('click', () => {
+    document.getElementById('form-title')!.textContent = '新增 Banner';
+    (document.getElementById('edit-id') as HTMLInputElement).value = '';
+    ['banner-title', 'banner-subtitle', 'banner-image', 'banner-link'].forEach(id => {
+      (document.getElementById(id) as HTMLInputElement).value = '';
+    });
+    (document.getElementById('banner-sort') as HTMLInputElement).value = '0';
+    (document.getElementById('banner-status') as HTMLSelectElement).value = 'active';
+    document.getElementById('banner-preview')!.classList.add('hidden');
+    document.getElementById('form-error')!.classList.add('hidden');
+    document.getElementById('banner-form')!.classList.remove('hidden');
+  });
+
+  document.getElementById('cancel-form')?.addEventListener('click', () => {
+    document.getElementById('banner-form')!.classList.add('hidden');
+  });
+
+  document.getElementById('save-banner')?.addEventListener('click', async () => {
+    const editId = (document.getElementById('edit-id') as HTMLInputElement).value;
+    const imageUrl = (document.getElementById('banner-image') as HTMLInputElement).value.trim();
+    const errorEl = document.getElementById('form-error')!;
+
+    if (!imageUrl) {
+      errorEl.textContent = '请填写图片URL';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    try {
+      const method = editId ? 'PUT' : 'POST';
+      const url = editId ? `/api/admin/banners/${editId}` : '/api/admin/banners';
+      const res = await fetch(url, {
+        method, credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: (document.getElementById('banner-title') as HTMLInputElement).value.trim() || null,
+          subtitle: (document.getElementById('banner-subtitle') as HTMLInputElement).value.trim() || null,
+          image_url: imageUrl,
+          link_url: (document.getElementById('banner-link') as HTMLInputElement).value.trim() || null,
+          sort_order: parseInt((document.getElementById('banner-sort') as HTMLInputElement).value) || 0,
+          status: (document.getElementById('banner-status') as HTMLSelectElement).value
+        })
+      });
+      if (res.ok) {
+        document.getElementById('banner-form')!.classList.add('hidden');
+        loadBanners();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        errorEl.textContent = d.message || '保存失败';
+        errorEl.classList.remove('hidden');
+      }
+    } catch {
+      errorEl.textContent = '网络错误';
+      errorEl.classList.remove('hidden');
+    }
+  });
+
+  loadBanners();
+</script>

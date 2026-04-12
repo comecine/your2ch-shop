@@ -1,0 +1,198 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="库存管理">
+  <div class="flex items-center justify-between mb-5">
+    <div class="flex items-center gap-3">
+      <input type="text" id="search-input" class="input-field w-60 py-2 text-sm" placeholder="搜索商品名称..." />
+      <button id="search-btn" class="btn-primary btn-sm">搜索</button>
+    </div>
+    <label class="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" id="low-stock-only" class="w-4 h-4 accent-primary" />
+      <span class="text-sm text-gray-600">只看低库存（&lt;10）</span>
+    </label>
+  </div>
+
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table-default">
+        <thead>
+          <tr>
+            <th>商品</th>
+            <th>分类</th>
+            <th>库存</th>
+            <th>销量</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="inventory-table">
+          <tr><td colspan="5" class="text-center py-8 text-gray-400">加载中...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="pagination" class="flex items-center justify-center gap-1 mt-5"></div>
+
+  <!-- 库存修改提示 -->
+  <div id="save-toast" class="hidden fixed bottom-4 right-4 bg-primary text-white px-4 py-2 rounded-lg shadow-lg text-sm z-50">
+    库存已更新！
+  </div>
+</AdminLayout>
+
+<script>
+  let currentPage = 1;
+  let searchQuery = '';
+  let lowStockOnly = false;
+  const pendingUpdates: Record<number, number> = {};
+
+  async function loadInventory() {
+    const tbody = document.getElementById('inventory-table')!;
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-400">加载中...</td></tr>';
+
+    try {
+      const params = new URLSearchParams({ page: String(currentPage), limit: '15' });
+      if (searchQuery) params.set('q', searchQuery);
+      if (lowStockOnly) params.set('low_stock', '1');
+      const res = await fetch(`/api/admin/inventory?${params}`, { credentials: 'include' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      const products = data.products || data || [];
+      const totalPages = data.total_pages || 1;
+
+      tbody.innerHTML = products.length ? products.map((p: any) => {
+        const isLow = p.stock < 10;
+        const isOut = p.stock === 0;
+        return `
+          <tr class="${isOut ? 'bg-red-50' : isLow ? 'bg-orange-50' : ''}">
+            <td>
+              <div class="flex items-center gap-3">
+                <img src="${p.main_image || 'https://placehold.co/40x40/dcfce7/16a34a?text=图'}"
+                  class="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                  onerror="this.src='https://placehold.co/40x40/dcfce7/16a34a?text=图'"
+                />
+                <div>
+                  <div class="text-sm font-medium text-gray-900">${p.name}</div>
+                  <div class="text-xs text-gray-400 font-mono">${p.slug}</div>
+                </div>
+              </div>
+            </td>
+            <td class="text-sm text-gray-500">${p.category_name || '-'}</td>
+            <td>
+              <div class="flex items-center gap-2">
+                <span
+                  class="stock-display ${isOut ? 'text-red-600 font-bold' : isLow ? 'text-orange-500 font-bold' : 'text-gray-800 font-medium'} cursor-pointer hover:underline"
+                  data-id="${p.id}"
+                  data-stock="${p.stock}"
+                >
+                  ${isOut ? '缺货（0）' : p.stock}
+                </span>
+                ${isLow ? `<span class="badge ${isOut ? 'badge-red' : 'badge-yellow'}">${isOut ? '缺货' : '库存低'}</span>` : ''}
+                <div class="stock-editor hidden flex items-center gap-1" data-id="${p.id}">
+                  <input type="number" class="stock-input w-20 px-2 py-1 text-sm border border-primary rounded focus:outline-none" value="${p.stock}" min="0" data-id="${p.id}" />
+                  <button class="stock-save text-xs bg-primary text-white px-2 py-1 rounded hover:bg-primary-dark" data-id="${p.id}">保存</button>
+                  <button class="stock-cancel text-xs text-gray-400 hover:text-gray-600 px-1" data-id="${p.id}">✕</button>
+                </div>
+              </div>
+            </td>
+            <td class="text-sm text-gray-600">${p.sales_count || 0}</td>
+            <td>
+              <a href="/admin/products/${p.id}" class="text-primary text-xs hover:underline">编辑商品</a>
+            </td>
+          </tr>
+        `;
+      }).join('') : '<tr><td colspan="5" class="text-center py-8 text-gray-400">暂无商品</td></tr>';
+
+      // 点击库存数字进入编辑模式
+      tbody.querySelectorAll('.stock-display').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = (el as HTMLElement).dataset.id;
+          el.classList.add('hidden');
+          tbody.querySelector(`.stock-editor[data-id="${id}"]`)?.classList.remove('hidden');
+          (tbody.querySelector(`.stock-input[data-id="${id}"]`) as HTMLInputElement)?.focus();
+        });
+      });
+
+      // 取消编辑
+      tbody.querySelectorAll('.stock-cancel').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = (btn as HTMLButtonElement).dataset.id;
+          tbody.querySelector(`.stock-editor[data-id="${id}"]`)?.classList.add('hidden');
+          tbody.querySelector(`.stock-display[data-id="${id}"]`)?.classList.remove('hidden');
+        });
+      });
+
+      // 保存库存
+      tbody.querySelectorAll('.stock-save').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = parseInt((btn as HTMLButtonElement).dataset.id || '0');
+          const input = tbody.querySelector(`.stock-input[data-id="${id}"]`) as HTMLInputElement;
+          const newStock = parseInt(input.value);
+          if (isNaN(newStock) || newStock < 0) return;
+
+          try {
+            const res = await fetch(`/api/admin/products/${id}`, {
+              method: 'PUT', credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ stock: newStock })
+            });
+            if (res.ok) {
+              const toast = document.getElementById('save-toast')!;
+              toast.classList.remove('hidden');
+              setTimeout(() => toast.classList.add('hidden'), 2000);
+              loadInventory();
+            }
+          } catch {}
+        });
+      });
+
+      // Enter 键保存
+      tbody.querySelectorAll('.stock-input').forEach(input => {
+        input.addEventListener('keydown', (e) => {
+          if ((e as KeyboardEvent).key === 'Enter') {
+            const id = (input as HTMLInputElement).dataset.id;
+            (tbody.querySelector(`.stock-save[data-id="${id}"]`) as HTMLButtonElement)?.click();
+          }
+          if ((e as KeyboardEvent).key === 'Escape') {
+            const id = (input as HTMLInputElement).dataset.id;
+            (tbody.querySelector(`.stock-cancel[data-id="${id}"]`) as HTMLButtonElement)?.click();
+          }
+        });
+      });
+
+      renderPagination(currentPage, totalPages);
+    } catch {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-400">加载失败</td></tr>';
+    }
+  }
+
+  function renderPagination(current: number, total: number) {
+    const container = document.getElementById('pagination')!;
+    if (total <= 1) { container.innerHTML = ''; return; }
+    container.innerHTML = `
+      ${current > 1 ? `<button class="page-btn px-3 py-1.5 text-sm rounded-lg text-gray-600 hover:bg-primary-light hover:text-primary" data-page="${current-1}">上一页</button>` : ''}
+      ${Array.from({length: Math.min(total, 7)}, (_, i) => i+1).map(p => `<button class="page-btn px-3 py-1.5 text-sm rounded-lg ${p===current?'bg-primary text-white':'text-gray-600 hover:bg-primary-light hover:text-primary'}" data-page="${p}">${p}</button>`).join('')}
+      ${current < total ? `<button class="page-btn px-3 py-1.5 text-sm rounded-lg text-gray-600 hover:bg-primary-light hover:text-primary" data-page="${current+1}">下一页</button>` : ''}
+    `;
+    document.querySelectorAll('.page-btn').forEach(btn => {
+      btn.addEventListener('click', () => { currentPage = parseInt((btn as HTMLButtonElement).dataset.page || '1'); loadInventory(); });
+    });
+  }
+
+  document.getElementById('search-btn')?.addEventListener('click', () => {
+    searchQuery = (document.getElementById('search-input') as HTMLInputElement).value.trim();
+    currentPage = 1;
+    loadInventory();
+  });
+  document.getElementById('search-input')?.addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter') { searchQuery = (e.target as HTMLInputElement).value.trim(); currentPage = 1; loadInventory(); }
+  });
+  document.getElementById('low-stock-only')?.addEventListener('change', (e) => {
+    lowStockOnly = (e.target as HTMLInputElement).checked;
+    currentPage = 1;
+    loadInventory();
+  });
+
+  loadInventory();
+</script>

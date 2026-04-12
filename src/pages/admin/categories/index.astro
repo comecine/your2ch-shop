@@ -1,0 +1,188 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="分类管理">
+  <div class="flex items-center justify-between mb-5">
+    <p class="text-sm text-gray-500">管理商品分类，分类排序越小越靠前</p>
+    <button id="show-add-form" class="btn-primary">+ 新增分类</button>
+  </div>
+
+  <!-- 新增/编辑表单 -->
+  <div id="category-form" class="hidden card p-5 mb-5">
+    <h3 id="form-title" class="font-medium text-gray-800 mb-4">新增分类</h3>
+    <input type="hidden" id="edit-id" value="" />
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">分类名称 <span class="text-red-500">*</span></label>
+        <input type="text" id="cat-name" class="input-field" placeholder="例如：厨房用品" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Slug <span class="text-red-500">*</span></label>
+        <input type="text" id="cat-slug" class="input-field font-mono" placeholder="kitchen" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">图标（Emoji）</label>
+        <input type="text" id="cat-icon" class="input-field" placeholder="🍳" maxlength="4" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">排序</label>
+        <input type="number" id="cat-sort" class="input-field" placeholder="0" min="0" />
+      </div>
+    </div>
+    <div id="form-error" class="hidden mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600"></div>
+    <div class="flex gap-3 mt-4">
+      <button id="save-category" class="btn-primary">保存</button>
+      <button id="cancel-form" class="btn-outline">取消</button>
+    </div>
+  </div>
+
+  <!-- 分类列表 -->
+  <div class="card overflow-hidden">
+    <table class="table-default">
+      <thead>
+        <tr>
+          <th>图标</th>
+          <th>名称</th>
+          <th>Slug</th>
+          <th>商品数</th>
+          <th>排序</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="categories-table">
+        <tr><td colspan="6" class="text-center py-8 text-gray-400">加载中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</AdminLayout>
+
+<script>
+  let categories: any[] = [];
+
+  async function loadCategories() {
+    try {
+      const res = await fetch('/api/admin/categories', { credentials: 'include' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      categories = data.categories || data || [];
+      renderTable();
+    } catch {
+      document.getElementById('categories-table')!.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">加载失败</td></tr>';
+    }
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('categories-table')!;
+    tbody.innerHTML = categories.length ? categories.map(cat => `
+      <tr>
+        <td class="text-xl">${cat.icon || '-'}</td>
+        <td class="font-medium">${cat.name}</td>
+        <td class="font-mono text-xs text-gray-500">${cat.slug}</td>
+        <td class="text-sm text-gray-600">${cat.product_count || 0}</td>
+        <td class="text-sm text-gray-600">${cat.sort_order || 0}</td>
+        <td>
+          <div class="flex gap-3">
+            <button class="edit-cat text-primary text-xs hover:underline" data-id="${cat.id}">编辑</button>
+            <button class="delete-cat text-red-400 text-xs hover:text-red-600" data-id="${cat.id}" data-name="${cat.name}">删除</button>
+          </div>
+        </td>
+      </tr>
+    `).join('') : '<tr><td colspan="6" class="text-center py-8 text-gray-400">暂无分类</td></tr>';
+
+    tbody.querySelectorAll('.edit-cat').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = parseInt((btn as HTMLButtonElement).dataset.id || '0');
+        const cat = categories.find(c => c.id === id);
+        if (!cat) return;
+        (document.getElementById('edit-id') as HTMLInputElement).value = String(id);
+        (document.getElementById('cat-name') as HTMLInputElement).value = cat.name;
+        (document.getElementById('cat-slug') as HTMLInputElement).value = cat.slug;
+        (document.getElementById('cat-icon') as HTMLInputElement).value = cat.icon || '';
+        (document.getElementById('cat-sort') as HTMLInputElement).value = cat.sort_order || '0';
+        document.getElementById('form-title')!.textContent = '编辑分类';
+        document.getElementById('category-form')!.classList.remove('hidden');
+        document.getElementById('category-form')!.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    tbody.querySelectorAll('.delete-cat').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = (btn as HTMLButtonElement).dataset.id;
+        const name = (btn as HTMLButtonElement).dataset.name;
+        if (!confirm(`确定删除分类"${name}"？该分类下的商品将变为未分类。`)) return;
+        try {
+          const res = await fetch(`/api/admin/categories/${id}`, { method: 'DELETE', credentials: 'include' });
+          if (res.ok) loadCategories();
+        } catch {}
+      });
+    });
+  }
+
+  document.getElementById('show-add-form')?.addEventListener('click', () => {
+    document.getElementById('form-title')!.textContent = '新增分类';
+    (document.getElementById('edit-id') as HTMLInputElement).value = '';
+    (document.getElementById('cat-name') as HTMLInputElement).value = '';
+    (document.getElementById('cat-slug') as HTMLInputElement).value = '';
+    (document.getElementById('cat-icon') as HTMLInputElement).value = '';
+    (document.getElementById('cat-sort') as HTMLInputElement).value = '0';
+    document.getElementById('form-error')!.classList.add('hidden');
+    document.getElementById('category-form')!.classList.remove('hidden');
+  });
+
+  document.getElementById('cancel-form')?.addEventListener('click', () => {
+    document.getElementById('category-form')!.classList.add('hidden');
+  });
+
+  // 自动生成 slug
+  document.getElementById('cat-name')?.addEventListener('input', (e) => {
+    const slugInput = document.getElementById('cat-slug') as HTMLInputElement;
+    if (!slugInput.dataset.manual) {
+      const slug = (e.target as HTMLInputElement).value.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+      slugInput.value = slug;
+    }
+  });
+  document.getElementById('cat-slug')?.addEventListener('input', (e) => {
+    const el = e.target as HTMLInputElement;
+    el.dataset.manual = '1';
+    el.value = el.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  });
+
+  document.getElementById('save-category')?.addEventListener('click', async () => {
+    const editId = (document.getElementById('edit-id') as HTMLInputElement).value;
+    const name = (document.getElementById('cat-name') as HTMLInputElement).value.trim();
+    const slug = (document.getElementById('cat-slug') as HTMLInputElement).value.trim();
+    const icon = (document.getElementById('cat-icon') as HTMLInputElement).value.trim();
+    const sortOrder = parseInt((document.getElementById('cat-sort') as HTMLInputElement).value) || 0;
+    const errorEl = document.getElementById('form-error')!;
+
+    if (!name || !slug) {
+      errorEl.textContent = '请填写分类名称和Slug';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    try {
+      const method = editId ? 'PUT' : 'POST';
+      const url = editId ? `/api/admin/categories/${editId}` : '/api/admin/categories';
+      const res = await fetch(url, {
+        method, credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, slug, icon, sort_order: sortOrder })
+      });
+      if (res.ok) {
+        document.getElementById('category-form')!.classList.add('hidden');
+        loadCategories();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        errorEl.textContent = d.message || '保存失败';
+        errorEl.classList.remove('hidden');
+      }
+    } catch {
+      errorEl.textContent = '网络错误';
+      errorEl.classList.remove('hidden');
+    }
+  });
+
+  loadCategories();
+</script>

@@ -1,0 +1,170 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+---
+
+<MainLayout title="个人资料">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- 加载 -->
+    <div id="profile-loading" class="flex justify-center py-16">
+      <svg class="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+      </svg>
+    </div>
+
+    <div id="profile-content" class="hidden">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <!-- 左侧：账户菜单 -->
+        <div class="md:col-span-1">
+          <div class="card overflow-hidden">
+            <!-- 用户信息 -->
+            <div class="bg-primary p-5 text-center">
+              <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3">
+                <span id="avatar-text" class="text-2xl font-bold text-primary">U</span>
+              </div>
+              <div id="user-display-name" class="text-white font-medium"></div>
+              <div id="user-email-display" class="text-primary-light text-xs mt-0.5 opacity-80"></div>
+            </div>
+            <!-- 导航 -->
+            <nav class="p-3">
+              <a href="/account/profile" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-primary-light text-primary">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                个人资料
+              </a>
+              <a href="/account/orders" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-primary transition-colors mt-1">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                我的订单
+              </a>
+              <a href="/account/addresses" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-primary transition-colors mt-1">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                收货地址
+              </a>
+              <button id="profile-logout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-500 hover:bg-red-50 transition-colors mt-1">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                退出登录
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        <!-- 右侧：内容区 -->
+        <div class="md:col-span-3 space-y-5">
+          <!-- 订单统计 -->
+          <div class="card p-5">
+            <h2 class="font-semibold text-gray-800 mb-4">订单统计</h2>
+            <div id="order-stats" class="grid grid-cols-3 sm:grid-cols-5 gap-3">
+              <div class="animate-pulse h-16 bg-gray-100 rounded-xl col-span-3 sm:col-span-5"></div>
+            </div>
+          </div>
+
+          <!-- 个人资料 -->
+          <div class="card p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-semibold text-gray-800">个人信息</h2>
+            </div>
+            <div class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">用户名</label>
+                  <div id="info-username" class="px-3 py-2.5 bg-gray-50 rounded-lg text-sm text-gray-800 border border-gray-100"></div>
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">邮箱地址</label>
+                  <div id="info-email" class="px-3 py-2.5 bg-gray-50 rounded-lg text-sm text-gray-800 border border-gray-100"></div>
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">手机号码</label>
+                  <div id="info-phone" class="px-3 py-2.5 bg-gray-50 rounded-lg text-sm text-gray-800 border border-gray-100"></div>
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">注册时间</label>
+                  <div id="info-created" class="px-3 py-2.5 bg-gray-50 rounded-lg text-sm text-gray-800 border border-gray-100"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</MainLayout>
+
+<script>
+  const statusMap: Record<string, string> = {
+    pending: '待确认',
+    confirmed: '已确认',
+    shipped: '已发货',
+    completed: '已完成',
+    cancelled: '已取消'
+  };
+
+  async function loadProfile() {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!res.ok) { window.location.href = '/account/login?redirect=/account/profile'; return; }
+
+      const data = await res.json();
+      const user = data.user || data;
+
+      document.getElementById('profile-loading')!.classList.add('hidden');
+      document.getElementById('profile-content')!.classList.remove('hidden');
+
+      // 用户信息
+      const username = user.username || '用户';
+      document.getElementById('avatar-text')!.textContent = username[0].toUpperCase();
+      document.getElementById('user-display-name')!.textContent = username;
+      document.getElementById('user-email-display')!.textContent = user.email || '';
+      document.getElementById('info-username')!.textContent = user.username || '-';
+      document.getElementById('info-email')!.textContent = user.email || '-';
+      document.getElementById('info-phone')!.textContent = user.phone || '未填写';
+      document.getElementById('info-created')!.textContent = user.created_at ? new Date(user.created_at).toLocaleDateString('zh-CN') : '-';
+
+      // 加载订单统计
+      try {
+        const orderRes = await fetch('/api/orders', { credentials: 'include' });
+        if (orderRes.ok) {
+          const orderData = await orderRes.json();
+          const orders = orderData.orders || orderData || [];
+
+          const stats: Record<string, number> = { all: orders.length, pending: 0, confirmed: 0, shipped: 0, completed: 0, cancelled: 0 };
+          orders.forEach((o: any) => { if (o.status in stats) stats[o.status]++; });
+
+          const statItems = [
+            { label: '全部', count: stats.all, href: '/account/orders', icon: '📋' },
+            { label: '待确认', count: stats.pending, href: '/account/orders?status=pending', icon: '⏳' },
+            { label: '已发货', count: stats.shipped, href: '/account/orders?status=shipped', icon: '🚚' },
+            { label: '已完成', count: stats.completed, href: '/account/orders?status=completed', icon: '✅' },
+            { label: '已取消', count: stats.cancelled, href: '/account/orders?status=cancelled', icon: '❌' },
+          ];
+
+          document.getElementById('order-stats')!.innerHTML = statItems.map(item => `
+            <a href="${item.href}" class="flex flex-col items-center p-3 rounded-xl hover:bg-primary-light transition-colors">
+              <div class="text-2xl mb-1">${item.icon}</div>
+              <div class="text-xl font-bold text-gray-900">${item.count}</div>
+              <div class="text-xs text-gray-500">${item.label}</div>
+            </a>
+          `).join('');
+        }
+      } catch {}
+    } catch (e) {
+      window.location.href = '/account/login?redirect=/account/profile';
+    }
+  }
+
+  document.getElementById('profile-logout')?.addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    localStorage.removeItem('cartCount');
+    window.location.href = '/';
+  });
+
+  loadProfile();
+</script>

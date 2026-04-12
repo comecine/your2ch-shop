@@ -1,0 +1,91 @@
+---
+export interface Props {
+  currentPage: number;
+  totalPages: number;
+  baseUrl?: string;
+}
+
+const { currentPage, totalPages, baseUrl = '' } = Astro.props;
+
+function getPageUrl(page: number) {
+  if (!baseUrl) return `?page=${page}`;
+  const url = new URL(baseUrl, 'http://x');
+  url.searchParams.set('page', String(page));
+  return url.pathname + url.search;
+}
+
+const pages: (number | '...')[] = [];
+if (totalPages <= 7) {
+  for (let i = 1; i <= totalPages; i++) pages.push(i);
+} else {
+  pages.push(1);
+  if (currentPage > 3) pages.push('...');
+  for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+    pages.push(i);
+  }
+  if (currentPage < totalPages - 2) pages.push('...');
+  pages.push(totalPages);
+}
+---
+
+{totalPages > 1 && (
+  <div class="flex items-center justify-center gap-1 my-8">
+    <!-- 上一页 -->
+    {currentPage > 1 ? (
+      <a
+        href={getPageUrl(currentPage - 1)}
+        class="px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-primary-light rounded-lg transition-colors flex items-center gap-1"
+      >
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        上一页
+      </a>
+    ) : (
+      <span class="px-3 py-2 text-sm text-gray-300 flex items-center gap-1">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        上一页
+      </span>
+    )}
+
+    <!-- 页码 -->
+    {pages.map(page => (
+      page === '...' ? (
+        <span class="px-3 py-2 text-sm text-gray-400">...</span>
+      ) : (
+        <a
+          href={getPageUrl(page)}
+          class={`px-3 py-2 text-sm rounded-lg transition-colors ${
+            page === currentPage
+              ? 'bg-primary text-white font-medium'
+              : 'text-gray-600 hover:text-primary hover:bg-primary-light'
+          }`}
+        >
+          {page}
+        </a>
+      )
+    ))}
+
+    <!-- 下一页 -->
+    {currentPage < totalPages ? (
+      <a
+        href={getPageUrl(currentPage + 1)}
+        class="px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-primary-light rounded-lg transition-colors flex items-center gap-1"
+      >
+        下一页
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
+    ) : (
+      <span class="px-3 py-2 text-sm text-gray-300 flex items-center gap-1">
+        下一页
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </span>
+    )}
+  </div>
+)}

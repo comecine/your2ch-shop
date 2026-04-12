@@ -1,0 +1,128 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="会员管理">
+  <div class="flex items-center gap-3 mb-5">
+    <input type="text" id="search-input" class="input-field w-64 py-2 text-sm" placeholder="搜索用户名或邮箱..." />
+    <button id="search-btn" class="btn-primary btn-sm">搜索</button>
+  </div>
+
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table-default">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>用户名</th>
+            <th>邮箱</th>
+            <th>手机</th>
+            <th>状态</th>
+            <th>注册时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="users-table">
+          <tr><td colspan="7" class="text-center py-8 text-gray-400">加载中...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="pagination" class="flex items-center justify-center gap-1 mt-5"></div>
+</AdminLayout>
+
+<script>
+  let currentPage = 1;
+  let searchQuery = '';
+
+  async function loadUsers() {
+    const tbody = document.getElementById('users-table')!;
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">加载中...</td></tr>';
+
+    try {
+      const params = new URLSearchParams({ page: String(currentPage), limit: '15' });
+      if (searchQuery) params.set('q', searchQuery);
+      const res = await fetch(`/api/admin/users?${params}`, { credentials: 'include' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      const users = data.users || data || [];
+      const totalPages = data.total_pages || 1;
+
+      tbody.innerHTML = users.length ? users.map((u: any) => `
+        <tr>
+          <td class="text-xs text-gray-400">${u.id}</td>
+          <td class="font-medium">${u.username}</td>
+          <td class="text-sm text-gray-600">${u.email || '-'}</td>
+          <td class="text-sm text-gray-600">${u.phone || '-'}</td>
+          <td>
+            <button
+              class="toggle-status ${u.is_active !== false && u.status !== 'inactive' ? 'badge-green cursor-pointer hover:bg-red-100 hover:text-red-600' : 'badge-red cursor-pointer hover:bg-green-100 hover:text-green-600'} transition-colors"
+              data-id="${u.id}"
+              data-active="${u.is_active !== false && u.status !== 'inactive'}"
+            >
+              ${u.is_active !== false && u.status !== 'inactive' ? '正常' : '已停用'}
+            </button>
+          </td>
+          <td class="text-xs text-gray-400">${new Date(u.created_at).toLocaleDateString('zh-CN')}</td>
+          <td>
+            <div class="flex gap-2">
+              <button class="text-xs text-primary hover:underline view-orders" data-id="${u.id}">查看订单</button>
+            </div>
+          </td>
+        </tr>
+      `).join('') : '<tr><td colspan="7" class="text-center py-8 text-gray-400">暂无用户</td></tr>';
+
+      // 切换状态
+      tbody.querySelectorAll('.toggle-status').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = (btn as HTMLButtonElement).dataset.id;
+          const isActive = (btn as HTMLButtonElement).dataset.active === 'true';
+          try {
+            const res = await fetch(`/api/admin/users/${id}`, {
+              method: 'PUT', credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ is_active: !isActive })
+            });
+            if (res.ok) loadUsers();
+          } catch {}
+        });
+      });
+
+      tbody.querySelectorAll('.view-orders').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = (btn as HTMLButtonElement).dataset.id;
+          window.location.href = `/admin/orders/?user_id=${id}`;
+        });
+      });
+
+      renderPagination(currentPage, totalPages);
+    } catch {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">加载失败</td></tr>';
+    }
+  }
+
+  function renderPagination(current: number, total: number) {
+    const container = document.getElementById('pagination')!;
+    if (total <= 1) { container.innerHTML = ''; return; }
+    container.innerHTML = `
+      ${current > 1 ? `<button class="page-btn px-3 py-1.5 text-sm rounded-lg text-gray-600 hover:bg-primary-light hover:text-primary" data-page="${current-1}">上一页</button>` : ''}
+      ${Array.from({length: Math.min(total, 7)}, (_, i) => i+1).map(p => `<button class="page-btn px-3 py-1.5 text-sm rounded-lg ${p===current?'bg-primary text-white':'text-gray-600 hover:bg-primary-light hover:text-primary'}" data-page="${p}">${p}</button>`).join('')}
+      ${current < total ? `<button class="page-btn px-3 py-1.5 text-sm rounded-lg text-gray-600 hover:bg-primary-light hover:text-primary" data-page="${current+1}">下一页</button>` : ''}
+    `;
+    document.querySelectorAll('.page-btn').forEach(btn => {
+      btn.addEventListener('click', () => { currentPage = parseInt((btn as HTMLButtonElement).dataset.page || '1'); loadUsers(); });
+    });
+  }
+
+  document.getElementById('search-btn')?.addEventListener('click', () => {
+    searchQuery = (document.getElementById('search-input') as HTMLInputElement).value.trim();
+    currentPage = 1;
+    loadUsers();
+  });
+  document.getElementById('search-input')?.addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter') { searchQuery = (e.target as HTMLInputElement).value.trim(); currentPage = 1; loadUsers(); }
+  });
+
+  loadUsers();
+</script>

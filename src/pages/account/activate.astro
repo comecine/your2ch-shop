@@ -1,0 +1,83 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+---
+
+<MainLayout title="账户激活">
+  <div class="min-h-[70vh] flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md text-center">
+      <!-- 激活中 -->
+      <div id="activating" class="card p-10">
+        <svg class="w-10 h-10 animate-spin text-primary mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+        <p class="text-gray-500">正在激活账户...</p>
+      </div>
+
+      <!-- 激活成功 -->
+      <div id="activate-success" class="hidden card p-10">
+        <div class="w-16 h-16 bg-primary-light rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">激活成功！</h1>
+        <p class="text-gray-500 mb-6">您的账户已成功激活，现在可以开始购物了</p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <a href="/account/login" class="btn-primary">立即登录</a>
+          <a href="/products" class="btn-outline">去选购商品</a>
+        </div>
+      </div>
+
+      <!-- 激活失败 -->
+      <div id="activate-error" class="hidden card p-10">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">激活失败</h1>
+        <p id="error-detail" class="text-gray-500 mb-6">激活链接已失效或不正确，请重新注册</p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <a href="/account/register" class="btn-primary">重新注册</a>
+          <a href="/" class="btn-outline">返回首页</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</MainLayout>
+
+<script>
+  async function activate() {
+    const token = new URLSearchParams(window.location.search).get('token');
+
+    if (!token) {
+      document.getElementById('activating')!.classList.add('hidden');
+      document.getElementById('error-detail')!.textContent = '激活链接无效，缺少激活码';
+      document.getElementById('activate-error')!.classList.remove('hidden');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/auth/activate?token=${encodeURIComponent(token)}`, {
+        credentials: 'include'
+      });
+
+      document.getElementById('activating')!.classList.add('hidden');
+
+      if (res.ok) {
+        document.getElementById('activate-success')!.classList.remove('hidden');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        document.getElementById('error-detail')!.textContent = data.message || '激活链接已失效，请重新注册';
+        document.getElementById('activate-error')!.classList.remove('hidden');
+      }
+    } catch (e) {
+      document.getElementById('activating')!.classList.add('hidden');
+      document.getElementById('error-detail')!.textContent = '网络错误，请稍后重试';
+      document.getElementById('activate-error')!.classList.remove('hidden');
+    }
+  }
+
+  activate();
+</script>

@@ -1,0 +1,14 @@
+name = "your2ch-shop"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "your2ch-shop-db"
+database_id = "0a956f0b-547d-4418-b684-3bea2c16445d"
+
+[vars]
+JWT_SECRET = "your2ch-shop-secret-2026"
+RESEND_FROM = "service@your2ch.com"
+SITE_NAME = "绿巢生活館"

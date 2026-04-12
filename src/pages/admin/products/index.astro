@@ -1,0 +1,146 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="商品管理">
+  <div class="flex items-center justify-between mb-5">
+    <div class="flex items-center gap-3">
+      <input type="text" id="search-input" class="input-field w-60 py-2 text-sm" placeholder="搜索商品名称..." />
+      <button id="search-btn" class="btn-primary btn-sm">搜索</button>
+    </div>
+    <a href="/admin/products/new" class="btn-primary">+ 新增商品</a>
+  </div>
+
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table-default">
+        <thead>
+          <tr>
+            <th class="w-12">图片</th>
+            <th>商品名称</th>
+            <th>分类</th>
+            <th>价格</th>
+            <th>库存</th>
+            <th>销量</th>
+            <th>状态</th>
+            <th class="w-28">操作</th>
+          </tr>
+        </thead>
+        <tbody id="products-table">
+          <tr><td colspan="8" class="text-center py-8 text-gray-400">加载中...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 分页 -->
+  <div id="pagination" class="flex items-center justify-center gap-1 mt-5"></div>
+</AdminLayout>
+
+<script>
+  let currentPage = 1;
+  let searchQuery = '';
+
+  async function loadProducts() {
+    const tbody = document.getElementById('products-table')!;
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8"><svg class="w-6 h-6 animate-spin text-primary mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg></td></tr>';
+
+    try {
+      const params = new URLSearchParams({ page: String(currentPage), limit: '15' });
+      if (searchQuery) params.set('q', searchQuery);
+      const res = await fetch(`/api/admin/products?${params}`, { credentials: 'include' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      const products = data.products || data || [];
+      const total = data.total || products.length;
+      const totalPages = data.total_pages || Math.ceil(total / 15);
+
+      tbody.innerHTML = products.length ? products.map((p: any) => `
+        <tr>
+          <td>
+            <img src="${p.main_image || 'https://placehold.co/40x40/dcfce7/16a34a?text=图'}"
+              class="w-10 h-10 rounded-lg object-cover"
+              onerror="this.src='https://placehold.co/40x40/dcfce7/16a34a?text=图'"
+            />
+          </td>
+          <td>
+            <div class="font-medium text-gray-900 line-clamp-1">${p.name}</div>
+            <div class="text-xs text-gray-400 font-mono">${p.slug}</div>
+          </td>
+          <td class="text-sm">${p.category_name || '-'}</td>
+          <td>
+            <div class="font-bold text-gray-900">¥${parseFloat(p.price).toFixed(2)}</div>
+            ${p.original_price ? `<div class="text-xs text-gray-400 line-through">¥${parseFloat(p.original_price).toFixed(2)}</div>` : ''}
+          </td>
+          <td>
+            <span class="${p.stock === 0 ? 'text-red-500 font-bold' : p.stock < 10 ? 'text-orange-500 font-medium' : 'text-gray-700'}">${p.stock}</span>
+          </td>
+          <td class="text-sm text-gray-600">${p.sales_count || 0}</td>
+          <td>
+            <span class="${p.status === 'active' || p.is_active ? 'badge-green' : 'badge-gray'}">
+              ${p.status === 'active' || p.is_active ? '上架' : '下架'}
+            </span>
+          </td>
+          <td>
+            <div class="flex items-center gap-2">
+              <a href="/admin/products/${p.id}" class="text-primary text-xs hover:underline">编辑</a>
+              <button class="delete-product text-red-400 text-xs hover:text-red-600" data-id="${p.id}" data-name="${p.name}">删除</button>
+            </div>
+          </td>
+        </tr>
+      `).join('') : '<tr><td colspan="8" class="text-center py-8 text-gray-400">暂无商品</td></tr>';
+
+      // 分页
+      renderPagination(currentPage, totalPages);
+
+      // 删除按钮
+      document.querySelectorAll('.delete-product').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = (btn as HTMLButtonElement).dataset.id;
+          const name = (btn as HTMLButtonElement).dataset.name;
+          if (!confirm(`确定要删除商品"${name}"？此操作不可撤销。`)) return;
+          try {
+            const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE', credentials: 'include' });
+            if (res.ok) loadProducts();
+          } catch {}
+        });
+      });
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-400">加载失败</td></tr>';
+    }
+  }
+
+  function renderPagination(current: number, total: number) {
+    const container = document.getElementById('pagination')!;
+    if (total <= 1) { container.innerHTML = ''; return; }
+    container.innerHTML = `
+      ${current > 1 ? `<button class="page-btn px-3 py-1.5 text-sm text-gray-600 hover:text-primary hover:bg-primary-light rounded-lg" data-page="${current - 1}">上一页</button>` : ''}
+      ${Array.from({length: Math.min(total, 10)}, (_, i) => i + 1).map(p =>
+        `<button class="page-btn px-3 py-1.5 text-sm rounded-lg ${p === current ? 'bg-primary text-white' : 'text-gray-600 hover:text-primary hover:bg-primary-light'}" data-page="${p}">${p}</button>`
+      ).join('')}
+      ${current < total ? `<button class="page-btn px-3 py-1.5 text-sm text-gray-600 hover:text-primary hover:bg-primary-light rounded-lg" data-page="${current + 1}">下一页</button>` : ''}
+    `;
+    document.querySelectorAll('.page-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentPage = parseInt((btn as HTMLButtonElement).dataset.page || '1');
+        loadProducts();
+      });
+    });
+  }
+
+  document.getElementById('search-btn')?.addEventListener('click', () => {
+    searchQuery = (document.getElementById('search-input') as HTMLInputElement).value.trim();
+    currentPage = 1;
+    loadProducts();
+  });
+
+  document.getElementById('search-input')?.addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter') {
+      searchQuery = (e.target as HTMLInputElement).value.trim();
+      currentPage = 1;
+      loadProducts();
+    }
+  });
+
+  loadProducts();
+</script>

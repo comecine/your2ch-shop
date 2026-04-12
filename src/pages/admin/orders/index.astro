@@ -1,0 +1,117 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="订单管理">
+  <!-- 状态 Tab -->
+  <div class="flex overflow-x-auto border-b border-gray-200 mb-5 gap-0">
+    {[
+      { key: '', label: '全部' },
+      { key: 'pending', label: '待确认' },
+      { key: 'confirmed', label: '已确认' },
+      { key: 'shipped', label: '已发货' },
+      { key: 'completed', label: '已完成' },
+      { key: 'cancelled', label: '已取消' },
+    ].map(tab => (
+      <button class="status-tab flex-shrink-0 px-5 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap" data-status={tab.key}>
+        {tab.label}
+      </button>
+    ))}
+  </div>
+
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table-default">
+        <thead>
+          <tr>
+            <th>订单号</th>
+            <th>会员</th>
+            <th>商品</th>
+            <th>金额</th>
+            <th>状态</th>
+            <th>时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="orders-table">
+          <tr><td colspan="7" class="text-center py-8 text-gray-400">加载中...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="pagination" class="flex items-center justify-center gap-1 mt-5"></div>
+</AdminLayout>
+
+<script>
+  let currentStatus = '';
+  let currentPage = 1;
+
+  const statusMap: Record<string, string> = { pending: '待确认', confirmed: '已确认', shipped: '已发货', completed: '已完成', cancelled: '已取消' };
+  const statusClass: Record<string, string> = { pending: 'badge-yellow', confirmed: 'badge-blue', shipped: 'badge-green', completed: 'badge bg-gray-100 text-gray-600', cancelled: 'badge-red' };
+
+  async function loadOrders() {
+    const tbody = document.getElementById('orders-table')!;
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8"><svg class="w-6 h-6 animate-spin text-primary mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg></td></tr>';
+
+    try {
+      const params = new URLSearchParams({ page: String(currentPage), limit: '15' });
+      if (currentStatus) params.set('status', currentStatus);
+      const res = await fetch(`/api/admin/orders?${params}`, { credentials: 'include' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      const orders = data.orders || data || [];
+      const totalPages = data.total_pages || 1;
+
+      tbody.innerHTML = orders.length ? orders.map((o: any) => {
+        const items = o.items || [];
+        return `
+          <tr>
+            <td class="font-mono text-xs">${o.order_no || o.id}</td>
+            <td class="text-sm">${o.username || o.user_id || '-'}</td>
+            <td class="text-sm text-gray-500">${items[0]?.product_name || '-'}${items.length > 1 ? ` 等${items.length}件` : ''}</td>
+            <td class="font-bold">¥${parseFloat(o.total_amount).toFixed(2)}</td>
+            <td><span class="${statusClass[o.status] || 'badge-gray'}">${statusMap[o.status] || o.status}</span></td>
+            <td class="text-xs text-gray-400">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td>
+            <td><a href="/admin/orders/${o.id}" class="text-primary text-xs hover:underline">查看/操作</a></td>
+          </tr>
+        `;
+      }).join('') : '<tr><td colspan="7" class="text-center py-8 text-gray-400">暂无订单</td></tr>';
+
+      renderPagination(currentPage, totalPages);
+    } catch {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">加载失败</td></tr>';
+    }
+  }
+
+  function renderPagination(current: number, total: number) {
+    const container = document.getElementById('pagination')!;
+    if (total <= 1) { container.innerHTML = ''; return; }
+    container.innerHTML = `
+      ${current > 1 ? `<button class="page-btn px-3 py-1.5 text-sm rounded-lg text-gray-600 hover:bg-primary-light hover:text-primary" data-page="${current-1}">上一页</button>` : ''}
+      ${Array.from({length: Math.min(total, 7)}, (_, i) => i+1).map(p => `<button class="page-btn px-3 py-1.5 text-sm rounded-lg ${p===current?'bg-primary text-white':'text-gray-600 hover:bg-primary-light hover:text-primary'}" data-page="${p}">${p}</button>`).join('')}
+      ${current < total ? `<button class="page-btn px-3 py-1.5 text-sm rounded-lg text-gray-600 hover:bg-primary-light hover:text-primary" data-page="${current+1}">下一页</button>` : ''}
+    `;
+    document.querySelectorAll('.page-btn').forEach(btn => {
+      btn.addEventListener('click', () => { currentPage = parseInt((btn as HTMLButtonElement).dataset.page || '1'); loadOrders(); });
+    });
+  }
+
+  // Tab 切换
+  document.querySelectorAll('.status-tab').forEach(tab => {
+    tab.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700');
+    tab.addEventListener('click', () => {
+      currentStatus = (tab as HTMLButtonElement).dataset.status || '';
+      currentPage = 1;
+      document.querySelectorAll('.status-tab').forEach(t => { t.classList.remove('border-primary', 'text-primary'); t.classList.add('border-transparent', 'text-gray-500'); });
+      tab.classList.add('border-primary', 'text-primary');
+      tab.classList.remove('border-transparent', 'text-gray-500');
+      loadOrders();
+    });
+  });
+
+  // 默认激活第一个 tab
+  document.querySelector('.status-tab')?.classList.add('border-primary', 'text-primary');
+  document.querySelector('.status-tab')?.classList.remove('border-transparent', 'text-gray-500');
+  loadOrders();
+</script>

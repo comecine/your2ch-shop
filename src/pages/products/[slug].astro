@@ -1,0 +1,340 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+
+const { slug } = Astro.params;
+---
+
+<MainLayout title="商品详情">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- 面包屑 -->
+    <nav class="text-sm text-gray-500 mb-6">
+      <a href="/" class="hover:text-primary">首页</a>
+      <span class="mx-2">/</span>
+      <a href="/products" class="hover:text-primary">全部商品</a>
+      <span class="mx-2">/</span>
+      <span id="breadcrumb-name" class="text-gray-800">...</span>
+    </nav>
+
+    <!-- 加载状态 -->
+    <div id="product-loading" class="flex items-center justify-center py-24">
+      <div class="text-center">
+        <svg class="w-10 h-10 animate-spin text-primary mx-auto mb-3" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+        <p class="text-gray-500 text-sm">加载中...</p>
+      </div>
+    </div>
+
+    <!-- 商品内容（隐藏，加载后显示） -->
+    <div id="product-content" class="hidden">
+      <!-- 商品主区域 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+        <!-- 左侧：图片区 -->
+        <div>
+          <!-- 主图 -->
+          <div class="card overflow-hidden mb-3 aspect-square bg-gray-50">
+            <img id="main-image" src="" alt="" class="w-full h-full object-contain" />
+          </div>
+          <!-- 缩略图 -->
+          <div id="thumbnails" class="flex gap-2 overflow-x-auto pb-2"></div>
+        </div>
+
+        <!-- 右侧：商品信息 -->
+        <div class="flex flex-col">
+          <!-- 标题 -->
+          <h1 id="product-name" class="text-2xl font-bold text-gray-900 mb-3 leading-tight"></h1>
+
+          <!-- 价格区 -->
+          <div class="bg-gray-50 rounded-xl p-4 mb-5">
+            <div class="flex items-end gap-3 mb-2">
+              <span id="product-price" class="text-3xl font-bold text-red-500"></span>
+              <span id="product-original-price" class="text-lg text-gray-400 line-through hidden"></span>
+            </div>
+            <div id="discount-info" class="hidden text-sm text-orange-500 font-medium"></div>
+          </div>
+
+          <!-- 库存 -->
+          <div class="flex items-center gap-2 mb-5">
+            <span class="text-sm text-gray-500">库存：</span>
+            <span id="stock-display" class="text-sm font-medium"></span>
+          </div>
+
+          <!-- 数量选择 -->
+          <div class="flex items-center gap-4 mb-6">
+            <span class="text-sm text-gray-500">数量：</span>
+            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+              <button id="qty-minus" class="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors text-lg">−</button>
+              <input id="qty-input" type="number" value="1" min="1" class="w-14 h-10 text-center text-sm border-x border-gray-300 focus:outline-none" />
+              <button id="qty-plus" class="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors text-lg">+</button>
+            </div>
+            <span id="stock-warn" class="text-xs text-gray-400 hidden"></span>
+          </div>
+
+          <!-- 操作按钮 -->
+          <div class="flex gap-3 mb-6">
+            <button id="add-to-cart-btn" class="flex-1 btn-outline py-3 text-base">
+              加入购物车
+            </button>
+            <button id="buy-now-btn" class="flex-1 btn-primary py-3 text-base">
+              立即购买
+            </button>
+          </div>
+
+          <!-- 服务保障 -->
+          <div class="border border-gray-100 rounded-xl p-4">
+            <div class="grid grid-cols-3 gap-3 text-center text-xs text-gray-500">
+              <div class="flex flex-col items-center gap-1">
+                <span class="text-xl">✅</span>
+                <span>正品保证</span>
+              </div>
+              <div class="flex flex-col items-center gap-1">
+                <span class="text-xl">🚚</span>
+                <span>满99包邮</span>
+              </div>
+              <div class="flex flex-col items-center gap-1">
+                <span class="text-xl">🔄</span>
+                <span>7天退换</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 商品详情描述 -->
+      <div class="card p-6 mb-8">
+        <div class="border-b border-gray-100 mb-4 flex">
+          <div class="px-4 pb-3 border-b-2 border-primary text-primary font-medium text-sm">商品详情</div>
+        </div>
+        <div id="product-description" class="prose prose-sm max-w-none text-gray-700 leading-relaxed"></div>
+      </div>
+
+      <!-- 相关商品 -->
+      <div class="mb-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-1 h-6 bg-primary rounded-full"></div>
+          <h2 class="text-lg font-bold text-gray-800">相关推荐</h2>
+        </div>
+        <div id="related-products" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"></div>
+      </div>
+    </div>
+
+    <!-- 404 状态 -->
+    <div id="product-404" class="hidden text-center py-24">
+      <div class="text-6xl mb-4">😢</div>
+      <h2 class="text-xl font-medium text-gray-700 mb-2">商品不存在</h2>
+      <p class="text-gray-500 mb-6">该商品已下架或不存在</p>
+      <a href="/products" class="btn-primary">返回商品列表</a>
+    </div>
+  </div>
+</MainLayout>
+
+<script define:vars={{ slug }}>
+  let maxStock = 999;
+
+  async function loadProduct() {
+    try {
+      const res = await fetch(`/api/products/${slug}`, { credentials: 'include' });
+
+      if (res.status === 404) {
+        document.getElementById('product-loading')!.classList.add('hidden');
+        document.getElementById('product-404')!.classList.remove('hidden');
+        return;
+      }
+
+      if (!res.ok) throw new Error('Failed');
+
+      const data = await res.json();
+      const product = data.product || data;
+
+      document.getElementById('product-loading')!.classList.add('hidden');
+      document.getElementById('product-content')!.classList.remove('hidden');
+
+      // 填充数据
+      document.title = `${product.name} - 绿巢生活館`;
+      document.getElementById('breadcrumb-name')!.textContent = product.name;
+      document.getElementById('product-name')!.textContent = product.name;
+      document.getElementById('product-price')!.textContent = `¥${parseFloat(product.price).toFixed(2)}`;
+
+      if (product.original_price && product.original_price > product.price) {
+        const origEl = document.getElementById('product-original-price')!;
+        origEl.textContent = `¥${parseFloat(product.original_price).toFixed(2)}`;
+        origEl.classList.remove('hidden');
+
+        const discount = Math.round((1 - product.price / product.original_price) * 100);
+        if (discount > 0) {
+          const discountEl = document.getElementById('discount-info')!;
+          discountEl.textContent = `立省 ¥${(product.original_price - product.price).toFixed(2)} | 已优惠 ${discount}%`;
+          discountEl.classList.remove('hidden');
+        }
+      }
+
+      // 库存
+      maxStock = product.stock || 0;
+      const stockEl = document.getElementById('stock-display')!;
+      const addBtn = document.getElementById('add-to-cart-btn') as HTMLButtonElement;
+      const buyBtn = document.getElementById('buy-now-btn') as HTMLButtonElement;
+
+      if (maxStock === 0) {
+        stockEl.textContent = '暂时缺货';
+        stockEl.className = 'text-sm font-medium text-red-500';
+        addBtn.disabled = true;
+        addBtn.textContent = '暂时缺货';
+        buyBtn.disabled = true;
+        buyBtn.textContent = '暂时缺货';
+      } else if (maxStock < 10) {
+        stockEl.textContent = `仅剩 ${maxStock} 件`;
+        stockEl.className = 'text-sm font-medium text-orange-500';
+        document.getElementById('stock-warn')!.textContent = `最多可购 ${maxStock} 件`;
+        document.getElementById('stock-warn')!.classList.remove('hidden');
+      } else {
+        stockEl.textContent = '有货';
+        stockEl.className = 'text-sm font-medium text-primary';
+      }
+
+      const qtyInput = document.getElementById('qty-input') as HTMLInputElement;
+      qtyInput.max = String(maxStock);
+
+      // 图片
+      const mainImg = document.getElementById('main-image') as HTMLImageElement;
+      const images = product.images && product.images.length > 0 ? product.images : (product.main_image ? [product.main_image] : []);
+
+      if (images.length > 0) {
+        mainImg.src = images[0];
+        mainImg.alt = product.name;
+
+        const thumbnails = document.getElementById('thumbnails')!;
+        images.forEach((img: string, i: number) => {
+          const thumb = document.createElement('button');
+          thumb.className = `w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-colors ${i === 0 ? 'border-primary' : 'border-transparent'}`;
+          thumb.innerHTML = `<img src="${img}" alt="${product.name}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/64x64/dcfce7/16a34a?text=图片'" />`;
+          thumb.addEventListener('click', () => {
+            mainImg.src = img;
+            thumbnails.querySelectorAll('button').forEach(b => b.className = b.className.replace('border-primary', 'border-transparent'));
+            thumb.className = thumb.className.replace('border-transparent', 'border-primary');
+          });
+          thumbnails.appendChild(thumb);
+        });
+      } else {
+        mainImg.src = 'https://placehold.co/600x600/dcfce7/16a34a?text=暂无图片';
+        mainImg.alt = product.name;
+      }
+
+      // 描述
+      const descEl = document.getElementById('product-description')!;
+      descEl.innerHTML = product.description || '<p class="text-gray-400">暂无详情描述</p>';
+
+      // 加载相关商品
+      if (product.category_slug || product.category_id) {
+        loadRelated(product.category_slug || product.category_id, product.id);
+      }
+    } catch (e) {
+      document.getElementById('product-loading')!.innerHTML = '<div class="text-center py-24 text-gray-400">加载失败，请刷新重试</div>';
+    }
+  }
+
+  async function loadRelated(category: string | number, currentId: number) {
+    try {
+      const res = await fetch(`/api/products?category=${category}&limit=5`, { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const products = (data.products || data || []).filter((p: any) => p.id !== currentId);
+
+      const container = document.getElementById('related-products')!;
+      if (!products.length) {
+        container.parentElement!.classList.add('hidden');
+        return;
+      }
+
+      container.innerHTML = products.slice(0, 5).map((p: any) => `
+        <a href="/products/${p.slug}" class="card group hover:shadow-md transition-shadow">
+          <div class="aspect-square overflow-hidden bg-gray-50">
+            <img src="${p.main_image || 'https://placehold.co/200x200/dcfce7/16a34a?text=图片'}"
+              alt="${p.name}"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onerror="this.src='https://placehold.co/200x200/dcfce7/16a34a?text=图片'"
+            />
+          </div>
+          <div class="p-2">
+            <p class="text-xs text-gray-700 line-clamp-2 mb-1">${p.name}</p>
+            <p class="text-sm font-bold text-red-500">¥${parseFloat(p.price).toFixed(2)}</p>
+          </div>
+        </a>
+      `).join('');
+    } catch (e) {}
+  }
+
+  // 数量控制
+  document.getElementById('qty-minus')?.addEventListener('click', () => {
+    const input = document.getElementById('qty-input') as HTMLInputElement;
+    const val = parseInt(input.value) - 1;
+    if (val >= 1) input.value = String(val);
+  });
+
+  document.getElementById('qty-plus')?.addEventListener('click', () => {
+    const input = document.getElementById('qty-input') as HTMLInputElement;
+    const val = parseInt(input.value) + 1;
+    if (val <= maxStock) input.value = String(val);
+  });
+
+  document.getElementById('qty-input')?.addEventListener('change', () => {
+    const input = document.getElementById('qty-input') as HTMLInputElement;
+    let val = parseInt(input.value);
+    if (isNaN(val) || val < 1) val = 1;
+    if (val > maxStock) val = maxStock;
+    input.value = String(val);
+  });
+
+  // 加入购物车
+  document.getElementById('add-to-cart-btn')?.addEventListener('click', async () => {
+    const qty = parseInt((document.getElementById('qty-input') as HTMLInputElement).value) || 1;
+    const btn = document.getElementById('add-to-cart-btn') as HTMLButtonElement;
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '添加中...';
+
+    try {
+      const productIdMeta = document.querySelector('[data-product-id]') as HTMLElement;
+      const productId = productIdMeta?.dataset.productId;
+
+      const res = await fetch('/api/cart', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_slug: slug, product_id: productId ? parseInt(productId) : undefined, quantity: qty })
+      });
+
+      if (res.status === 401) { window.location.href = `/account/login?redirect=/products/${slug}`; return; }
+
+      if (res.ok) {
+        btn.textContent = '已加入购物车';
+        const cartCount = parseInt(localStorage.getItem('cartCount') || '0') + qty;
+        localStorage.setItem('cartCount', String(cartCount));
+        window.dispatchEvent(new StorageEvent('storage', { key: 'cartCount', newValue: String(cartCount) }));
+        setTimeout(() => { btn.textContent = originalText; btn.disabled = false; }, 2000);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        btn.textContent = d.message || '添加失败';
+        setTimeout(() => { btn.textContent = originalText; btn.disabled = false; }, 2000);
+      }
+    } catch {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+  });
+
+  // 立即购买
+  document.getElementById('buy-now-btn')?.addEventListener('click', async () => {
+    const qty = parseInt((document.getElementById('qty-input') as HTMLInputElement).value) || 1;
+    try {
+      const res = await fetch('/api/cart', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_slug: slug, quantity: qty })
+      });
+      if (res.status === 401) { window.location.href = `/account/login?redirect=/products/${slug}`; return; }
+      if (res.ok) window.location.href = '/checkout';
+    } catch {}
+  });
+
+  loadProduct();
+</script>

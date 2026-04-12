@@ -1,0 +1,374 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+---
+
+<MainLayout title="收货地址">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">收货地址</h1>
+      <button id="show-add-form" class="btn-primary btn-sm">+ 新增地址</button>
+    </div>
+
+    <!-- 新增地址表单 -->
+    <div id="address-form-container" class="hidden card p-6 mb-5">
+      <h2 id="form-title" class="font-semibold text-gray-800 mb-4">新增收货地址</h2>
+      <input type="hidden" id="edit-address-id" value="" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">收货人 <span class="text-red-500">*</span></label>
+          <input type="text" id="addr-name" class="input-field" placeholder="请输入收货人姓名" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">手机号 <span class="text-red-500">*</span></label>
+          <input type="tel" id="addr-phone" class="input-field" placeholder="11位手机号" maxlength="11" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">省份 <span class="text-red-500">*</span></label>
+          <select id="addr-province" class="input-field">
+            <option value="">请选择省份</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">城市 <span class="text-red-500">*</span></label>
+          <select id="addr-city" class="input-field" disabled>
+            <option value="">请先选择省份</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">区/县 <span class="text-red-500">*</span></label>
+          <select id="addr-district" class="input-field" disabled>
+            <option value="">请先选择城市</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">邮政编码</label>
+          <input type="text" id="addr-zipcode" class="input-field" placeholder="选填" maxlength="6" />
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">详细地址 <span class="text-red-500">*</span></label>
+          <input type="text" id="addr-detail" class="input-field" placeholder="街道、门牌号、楼层等" />
+        </div>
+        <div class="sm:col-span-2 flex items-center gap-2">
+          <input type="checkbox" id="addr-default" class="w-4 h-4 accent-primary" />
+          <label for="addr-default" class="text-sm text-gray-600 cursor-pointer">设为默认地址</label>
+        </div>
+      </div>
+      <div id="form-error" class="hidden mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600"></div>
+      <div class="flex gap-3 mt-5">
+        <button id="save-address" class="btn-primary">保存地址</button>
+        <button id="cancel-form" class="btn-outline">取消</button>
+      </div>
+    </div>
+
+    <!-- 地址列表 -->
+    <div id="addresses-loading" class="flex justify-center py-12">
+      <svg class="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+      </svg>
+    </div>
+
+    <div id="no-addresses" class="hidden text-center py-16">
+      <div class="text-5xl mb-3">📍</div>
+      <p class="text-gray-500">还没有收货地址，赶快添加吧</p>
+    </div>
+
+    <div id="addresses-list" class="hidden space-y-3"></div>
+  </div>
+</MainLayout>
+
+<script>
+  // 中国省市区静态数据（10个主要省份）
+  const chinaRegions: Record<string, Record<string, string[]>> = {
+    '北京市': { '北京市': ['东城区', '西城区', '朝阳区', '丰台区', '石景山区', '海淀区', '顺义区', '通州区', '大兴区', '昌平区', '房山区', '门头沟区', '平谷区', '怀柔区', '密云区', '延庆区'] },
+    '上海市': { '上海市': ['黄浦区', '徐汇区', '长宁区', '静安区', '普陀区', '虹口区', '杨浦区', '浦东新区', '闵行区', '宝山区', '嘉定区', '金山区', '松江区', '青浦区', '奉贤区', '崇明区'] },
+    '广东省': {
+      '广州市': ['越秀区', '荔湾区', '海珠区', '天河区', '白云区', '黄埔区', '番禺区', '花都区', '南沙区', '从化区', '增城区'],
+      '深圳市': ['福田区', '罗湖区', '盐田区', '南山区', '宝安区', '龙岗区', '龙华区', '坪山区', '光明区', '大鹏新区'],
+      '东莞市': ['莞城街道', '南城街道', '万江街道', '厚街镇', '虎门镇', '长安镇', '塘厦镇'],
+      '佛山市': ['禅城区', '南海区', '顺德区', '三水区', '高明区'],
+    },
+    '浙江省': {
+      '杭州市': ['上城区', '拱墅区', '西湖区', '滨江区', '萧山区', '余杭区', '临平区', '钱塘区', '富阳区', '临安区'],
+      '宁波市': ['海曙区', '江北区', '北仑区', '镇海区', '鄞州区', '奉化区'],
+      '温州市': ['鹿城区', '龙湾区', '瓯海区', '洞头区'],
+      '嘉兴市': ['南湖区', '秀洲区', '嘉善县', '海盐县', '桐乡市', '海宁市', '平湖市'],
+    },
+    '江苏省': {
+      '南京市': ['玄武区', '秦淮区', '建邺区', '鼓楼区', '浦口区', '栖霞区', '雨花台区', '江宁区', '六合区', '溧水区', '高淳区'],
+      '苏州市': ['姑苏区', '虎丘区', '吴中区', '相城区', '吴江区', '常熟市', '张家港市', '昆山市', '太仓市'],
+      '无锡市': ['梁溪区', '锡山区', '惠山区', '滨湖区', '新吴区', '江阴市', '宜兴市'],
+    },
+    '四川省': {
+      '成都市': ['锦江区', '青羊区', '金牛区', '武侯区', '成华区', '龙泉驿区', '青白江区', '新都区', '温江区', '双流区', '郫都区'],
+      '绵阳市': ['涪城区', '游仙区', '安州区', '江油市'],
+      '德阳市': ['旌阳区', '中江县', '罗江区', '广汉市', '什邡市', '绵竹市'],
+    },
+    '湖北省': {
+      '武汉市': ['江岸区', '江汉区', '硚口区', '汉阳区', '武昌区', '青山区', '洪山区', '东西湖区', '汉南区', '蔡甸区', '江夏区', '黄陂区', '新洲区'],
+      '宜昌市': ['西陵区', '伍家岗区', '点军区', '猇亭区', '夷陵区'],
+      '襄阳市': ['襄城区', '樊城区', '襄州区', '南漳县', '谷城县'],
+    },
+    '河南省': {
+      '郑州市': ['中原区', '二七区', '管城回族区', '金水区', '上街区', '惠济区', '中牟县', '巩义市', '荥阳市', '新密市', '新郑市', '登封市'],
+      '洛阳市': ['涧西区', '西工区', '瀍河回族区', '老城区', '偃师区'],
+      '开封市': ['龙亭区', '顺河回族区', '鼓楼区', '禹王台区', '祥符区'],
+    },
+    '江西省': {
+      '南昌市': ['东湖区', '西湖区', '青云谱区', '青山湖区', '新建区', '红谷滩区', '南昌县', '安义县', '进贤县'],
+      '赣州市': ['章贡区', '南康区', '赣县区', '信丰县', '大余县', '上犹县'],
+      '吉安市': ['吉州区', '青原区', '吉安县', '吉水县', '峡江县'],
+    },
+    '山东省': {
+      '济南市': ['历下区', '市中区', '槐荫区', '天桥区', '历城区', '长清区', '章丘区', '济阳区', '莱芜区', '钢城区', '平阴县', '商河县'],
+      '青岛市': ['市南区', '市北区', '黄岛区', '崂山区', '李沧区', '城阳区', '即墨区', '胶州市', '平度市', '莱西市'],
+      '临沂市': ['兰山区', '罗庄区', '河东区', '沂南县', '郯城县', '沂水县'],
+    },
+  };
+
+  let currentAddresses: any[] = [];
+  let editingId: number | null = null;
+
+  function populateProvinces() {
+    const provinceSelect = document.getElementById('addr-province') as HTMLSelectElement;
+    Object.keys(chinaRegions).forEach(province => {
+      const opt = document.createElement('option');
+      opt.value = province;
+      opt.textContent = province;
+      provinceSelect.appendChild(opt);
+    });
+  }
+
+  function updateCities(province: string) {
+    const citySelect = document.getElementById('addr-city') as HTMLSelectElement;
+    const districtSelect = document.getElementById('addr-district') as HTMLSelectElement;
+    citySelect.innerHTML = '<option value="">请选择城市</option>';
+    districtSelect.innerHTML = '<option value="">请先选择城市</option>';
+    citySelect.disabled = !province;
+    districtSelect.disabled = true;
+
+    if (province && chinaRegions[province]) {
+      Object.keys(chinaRegions[province]).forEach(city => {
+        const opt = document.createElement('option');
+        opt.value = city;
+        opt.textContent = city;
+        citySelect.appendChild(opt);
+      });
+    }
+  }
+
+  function updateDistricts(province: string, city: string) {
+    const districtSelect = document.getElementById('addr-district') as HTMLSelectElement;
+    districtSelect.innerHTML = '<option value="">请选择区/县</option>';
+    districtSelect.disabled = !city;
+
+    if (province && city && chinaRegions[province]?.[city]) {
+      chinaRegions[province][city].forEach(district => {
+        const opt = document.createElement('option');
+        opt.value = district;
+        opt.textContent = district;
+        districtSelect.appendChild(opt);
+      });
+    }
+  }
+
+  document.getElementById('addr-province')?.addEventListener('change', (e) => {
+    updateCities((e.target as HTMLSelectElement).value);
+  });
+
+  document.getElementById('addr-city')?.addEventListener('change', (e) => {
+    const province = (document.getElementById('addr-province') as HTMLSelectElement).value;
+    updateDistricts(province, (e.target as HTMLSelectElement).value);
+  });
+
+  async function loadAddresses() {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!res.ok) { window.location.href = '/account/login?redirect=/account/addresses'; return; }
+
+      const addrRes = await fetch('/api/addresses', { credentials: 'include' });
+      const data = await addrRes.json();
+      currentAddresses = data.addresses || data || [];
+
+      document.getElementById('addresses-loading')!.classList.add('hidden');
+      renderAddresses();
+    } catch (e) {
+      window.location.href = '/account/login';
+    }
+  }
+
+  function renderAddresses() {
+    const list = document.getElementById('addresses-list')!;
+    const empty = document.getElementById('no-addresses')!;
+
+    if (!currentAddresses.length) {
+      empty.classList.remove('hidden');
+      list.classList.add('hidden');
+      return;
+    }
+
+    empty.classList.add('hidden');
+    list.classList.remove('hidden');
+    list.innerHTML = currentAddresses.map(addr => `
+      <div class="card p-5 ${addr.is_default ? 'border-2 border-primary' : ''}">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-3 mb-1.5">
+              <span class="font-medium text-gray-900">${addr.name}</span>
+              <span class="text-gray-600">${addr.phone}</span>
+              ${addr.is_default ? '<span class="badge badge-green">默认</span>' : ''}
+            </div>
+            <div class="text-sm text-gray-500">${addr.province || ''}${addr.city || ''}${addr.district || ''} ${addr.detail || ''}</div>
+            ${addr.zipcode ? `<div class="text-xs text-gray-400 mt-0.5">邮编：${addr.zipcode}</div>` : ''}
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0 ml-4">
+            ${!addr.is_default ? `
+              <button class="set-default-btn text-xs text-gray-500 hover:text-primary transition-colors" data-id="${addr.id}">设为默认</button>
+            ` : ''}
+            <button class="edit-addr-btn text-xs text-primary hover:text-primary-dark transition-colors" data-id="${addr.id}">编辑</button>
+            <button class="delete-addr-btn text-xs text-red-400 hover:text-red-600 transition-colors" data-id="${addr.id}">删除</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // 绑定事件
+    list.querySelectorAll('.edit-addr-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = parseInt((btn as HTMLButtonElement).dataset.id || '0');
+        const addr = currentAddresses.find(a => a.id === id);
+        if (!addr) return;
+        editingId = id;
+        document.getElementById('edit-address-id')!.setAttribute('value', String(id));
+        (document.getElementById('addr-name') as HTMLInputElement).value = addr.name;
+        (document.getElementById('addr-phone') as HTMLInputElement).value = addr.phone;
+        (document.getElementById('addr-zipcode') as HTMLInputElement).value = addr.zipcode || '';
+        (document.getElementById('addr-detail') as HTMLInputElement).value = addr.detail || '';
+        (document.getElementById('addr-default') as HTMLInputElement).checked = addr.is_default;
+        document.getElementById('form-title')!.textContent = '编辑收货地址';
+
+        // 省市区联动
+        const provinceSelect = document.getElementById('addr-province') as HTMLSelectElement;
+        provinceSelect.value = addr.province || '';
+        updateCities(addr.province || '');
+        setTimeout(() => {
+          const citySelect = document.getElementById('addr-city') as HTMLSelectElement;
+          citySelect.value = addr.city || '';
+          updateDistricts(addr.province || '', addr.city || '');
+          setTimeout(() => {
+            (document.getElementById('addr-district') as HTMLSelectElement).value = addr.district || '';
+          }, 50);
+        }, 50);
+
+        document.getElementById('address-form-container')!.classList.remove('hidden');
+        document.getElementById('address-form-container')!.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    list.querySelectorAll('.delete-addr-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('确定删除此地址？')) return;
+        const id = parseInt((btn as HTMLButtonElement).dataset.id || '0');
+        try {
+          const res = await fetch(`/api/addresses/${id}`, { method: 'DELETE', credentials: 'include' });
+          if (res.ok) {
+            currentAddresses = currentAddresses.filter(a => a.id !== id);
+            renderAddresses();
+          }
+        } catch {}
+      });
+    });
+
+    list.querySelectorAll('.set-default-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = parseInt((btn as HTMLButtonElement).dataset.id || '0');
+        try {
+          const res = await fetch(`/api/addresses/${id}`, {
+            method: 'PUT', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_default: true })
+          });
+          if (res.ok) {
+            currentAddresses = currentAddresses.map(a => ({ ...a, is_default: a.id === id }));
+            renderAddresses();
+          }
+        } catch {}
+      });
+    });
+  }
+
+  document.getElementById('show-add-form')?.addEventListener('click', () => {
+    editingId = null;
+    document.getElementById('form-title')!.textContent = '新增收货地址';
+    document.getElementById('edit-address-id')!.setAttribute('value', '');
+    (document.getElementById('addr-name') as HTMLInputElement).value = '';
+    (document.getElementById('addr-phone') as HTMLInputElement).value = '';
+    (document.getElementById('addr-zipcode') as HTMLInputElement).value = '';
+    (document.getElementById('addr-detail') as HTMLInputElement).value = '';
+    (document.getElementById('addr-default') as HTMLInputElement).checked = false;
+    (document.getElementById('addr-province') as HTMLSelectElement).value = '';
+    updateCities('');
+    document.getElementById('form-error')!.classList.add('hidden');
+    document.getElementById('address-form-container')!.classList.remove('hidden');
+    document.getElementById('address-form-container')!.scrollIntoView({ behavior: 'smooth' });
+  });
+
+  document.getElementById('cancel-form')?.addEventListener('click', () => {
+    document.getElementById('address-form-container')!.classList.add('hidden');
+  });
+
+  document.getElementById('save-address')?.addEventListener('click', async () => {
+    const name = (document.getElementById('addr-name') as HTMLInputElement).value.trim();
+    const phone = (document.getElementById('addr-phone') as HTMLInputElement).value.trim();
+    const province = (document.getElementById('addr-province') as HTMLSelectElement).value;
+    const city = (document.getElementById('addr-city') as HTMLSelectElement).value;
+    const district = (document.getElementById('addr-district') as HTMLSelectElement).value;
+    const zipcode = (document.getElementById('addr-zipcode') as HTMLInputElement).value.trim();
+    const detail = (document.getElementById('addr-detail') as HTMLInputElement).value.trim();
+    const isDefault = (document.getElementById('addr-default') as HTMLInputElement).checked;
+    const errorEl = document.getElementById('form-error')!;
+
+    errorEl.classList.add('hidden');
+
+    if (!name || !phone || !province || !city || !district || !detail) {
+      errorEl.textContent = '请填写所有必填项（带 * 号）';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    const editId = document.getElementById('edit-address-id')!.getAttribute('value');
+
+    try {
+      const method = editId ? 'PUT' : 'POST';
+      const url = editId ? `/api/addresses/${editId}` : '/api/addresses';
+      const res = await fetch(url, {
+        method, credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, province, city, district, zipcode, detail, is_default: isDefault })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (editId) {
+          currentAddresses = currentAddresses.map(a => a.id === parseInt(editId) ? (data.address || data) : a);
+          if (isDefault) currentAddresses = currentAddresses.map(a => ({ ...a, is_default: a.id === parseInt(editId) }));
+        } else {
+          if (isDefault) currentAddresses = currentAddresses.map(a => ({ ...a, is_default: false }));
+          currentAddresses.push(data.address || data);
+        }
+        document.getElementById('address-form-container')!.classList.add('hidden');
+        renderAddresses();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        errorEl.textContent = d.message || '保存失败，请重试';
+        errorEl.classList.remove('hidden');
+      }
+    } catch (e) {
+      errorEl.textContent = '网络错误，请重试';
+      errorEl.classList.remove('hidden');
+    }
+  });
+
+  populateProvinces();
+  loadAddresses();
+</script>

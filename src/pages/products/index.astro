@@ -1,0 +1,320 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+---
+
+<MainLayout title="全部商品">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="flex gap-6">
+      <!-- 左侧分类筛选 -->
+      <aside class="w-56 flex-shrink-0 hidden lg:block">
+        <div class="card p-4 sticky top-24">
+          <h3 class="font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-100">商品分类</h3>
+          <div id="sidebar-categories" class="space-y-1">
+            <a href="/products" class="block px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-primary-light hover:text-primary transition-colors">
+              全部分类
+            </a>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 主内容区 -->
+      <div class="flex-1 min-w-0">
+        <!-- 搜索结果提示 -->
+        <div id="search-hint" class="hidden mb-4 p-3 bg-primary-light rounded-lg text-sm text-gray-700"></div>
+
+        <!-- 筛选/排序栏 -->
+        <div class="card p-4 mb-4 flex flex-wrap items-center gap-3">
+          <!-- 移动端分类 -->
+          <div class="lg:hidden">
+            <select id="mobile-category" class="input-field py-2 text-sm">
+              <option value="">全部分类</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2 flex-1">
+            <span class="text-sm text-gray-500 whitespace-nowrap">排序：</span>
+            <div class="flex flex-wrap gap-2">
+              <button class="sort-btn px-3 py-1.5 text-sm rounded-lg border transition-colors" data-sort="default">综合</button>
+              <button class="sort-btn px-3 py-1.5 text-sm rounded-lg border transition-colors" data-sort="newest">最新</button>
+              <button class="sort-btn px-3 py-1.5 text-sm rounded-lg border transition-colors" data-sort="sales">销量</button>
+              <button class="sort-btn px-3 py-1.5 text-sm rounded-lg border transition-colors flex items-center gap-1" data-sort="price_asc">
+                价格
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                </svg>
+              </button>
+              <button class="sort-btn px-3 py-1.5 text-sm rounded-lg border transition-colors flex items-center gap-1" data-sort="price_desc">
+                价格
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="text-sm text-gray-500">
+            共 <span id="total-count">-</span> 件商品
+          </div>
+        </div>
+
+        <!-- 商品网格 -->
+        <div id="products-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {Array(12).fill(0).map(() => (
+            <div class="card animate-pulse">
+              <div class="bg-gray-200 aspect-square"></div>
+              <div class="p-3 space-y-2">
+                <div class="h-4 bg-gray-200 rounded"></div>
+                <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+                <div class="h-5 bg-gray-200 rounded w-1/3"></div>
+                <div class="h-8 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <!-- 分页 -->
+        <div id="pagination" class="flex items-center justify-center gap-1 my-8"></div>
+      </div>
+    </div>
+  </div>
+</MainLayout>
+
+<script>
+  let currentParams = {
+    sort: 'default',
+    category: '',
+    q: '',
+    page: 1,
+  };
+
+  function renderProductCard(product: any): string {
+    return `
+      <div class="card group cursor-pointer hover:shadow-md transition-shadow duration-200">
+        <a href="/products/${product.slug}" class="block">
+          <div class="relative overflow-hidden bg-gray-50 aspect-square">
+            <img src="${product.main_image || 'https://placehold.co/400x400/dcfce7/16a34a?text=暂无图片'}"
+              alt="${product.name}"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+              onerror="this.src='https://placehold.co/400x400/dcfce7/16a34a?text=暂无图片'"
+            />
+            ${product.original_price && product.original_price > product.price ? '<div class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">特价</div>' : ''}
+            ${product.stock === 0 ? '<div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="bg-white text-gray-600 text-sm px-3 py-1 rounded-full font-medium">暂时缺货</span></div>' : ''}
+          </div>
+          <div class="p-3">
+            <h3 class="text-sm text-gray-800 line-clamp-2 mb-2 group-hover:text-primary transition-colors min-h-[2.5rem]">
+              ${product.name}
+            </h3>
+            <div class="flex items-end gap-2 mb-2">
+              <span class="text-lg font-bold text-red-500">¥${parseFloat(product.price).toFixed(2)}</span>
+              ${product.original_price && product.original_price > product.price ? `<span class="text-xs text-gray-400 line-through">¥${parseFloat(product.original_price).toFixed(2)}</span>` : ''}
+            </div>
+            ${product.sales_count > 0 ? `<div class="text-xs text-gray-400">已售 ${product.sales_count}</div>` : ''}
+          </div>
+        </a>
+        <div class="px-3 pb-3">
+          <button
+            class="add-to-cart-btn w-full py-2 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition-colors ${product.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
+            data-product-id="${product.id}"
+            ${product.stock === 0 ? 'disabled' : ''}
+          >
+            ${product.stock === 0 ? '暂时缺货' : '加入购物车'}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderPagination(currentPage: number, totalPages: number) {
+    const container = document.getElementById('pagination');
+    if (!container || totalPages <= 1) {
+      if (container) container.innerHTML = '';
+      return;
+    }
+
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('...');
+      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+
+    container.innerHTML = `
+      ${currentPage > 1 ? `<button class="page-btn px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-primary-light rounded-lg" data-page="${currentPage - 1}">上一页</button>` : ''}
+      ${pages.map(p => typeof p === 'number'
+        ? `<button class="page-btn px-3 py-2 text-sm rounded-lg ${p === currentPage ? 'bg-primary text-white' : 'text-gray-600 hover:text-primary hover:bg-primary-light'}" data-page="${p}">${p}</button>`
+        : `<span class="px-2 text-gray-400">...</span>`
+      ).join('')}
+      ${currentPage < totalPages ? `<button class="page-btn px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-primary-light rounded-lg" data-page="${currentPage + 1}">下一页</button>` : ''}
+    `;
+
+    container.querySelectorAll('.page-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentParams.page = parseInt((btn as HTMLButtonElement).dataset.page || '1');
+        loadProducts();
+      });
+    });
+  }
+
+  async function loadProducts() {
+    const grid = document.getElementById('products-grid');
+    if (!grid) return;
+
+    // 显示骨架屏
+    grid.innerHTML = Array(12).fill(0).map(() => `
+      <div class="card animate-pulse">
+        <div class="bg-gray-200 aspect-square"></div>
+        <div class="p-3 space-y-2">
+          <div class="h-4 bg-gray-200 rounded"></div>
+          <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+          <div class="h-5 bg-gray-200 rounded w-1/3"></div>
+          <div class="h-8 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    `).join('');
+
+    try {
+      const params = new URLSearchParams();
+      if (currentParams.sort && currentParams.sort !== 'default') params.set('sort', currentParams.sort);
+      if (currentParams.category) params.set('category', currentParams.category);
+      if (currentParams.q) params.set('q', currentParams.q);
+      params.set('page', String(currentParams.page));
+      params.set('limit', '12');
+
+      const res = await fetch(`/api/products?${params.toString()}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to load products');
+      const data = await res.json();
+      const products = data.products || data || [];
+      const total = data.total || products.length;
+      const totalPages = data.total_pages || Math.ceil(total / 12);
+
+      document.getElementById('total-count')!.textContent = String(total);
+
+      if (!products.length) {
+        grid.innerHTML = '<div class="col-span-4 text-center py-16 text-gray-400">暂无商品，请试试其他筛选条件</div>';
+        document.getElementById('pagination')!.innerHTML = '';
+        return;
+      }
+
+      grid.innerHTML = products.map((p: any) => renderProductCard(p)).join('');
+      renderPagination(currentParams.page, totalPages);
+
+      // 绑定加入购物车
+      grid.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          const button = e.currentTarget as HTMLButtonElement;
+          const productId = button.dataset.productId;
+          if (!productId) return;
+          const originalText = button.textContent?.trim();
+          button.disabled = true;
+          button.textContent = '添加中...';
+          try {
+            const r = await fetch('/api/cart', {
+              method: 'POST', credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ product_id: parseInt(productId), quantity: 1 })
+            });
+            if (r.status === 401) { window.location.href = '/account/login'; return; }
+            if (r.ok) {
+              button.textContent = '已加入';
+              const cartCount = parseInt(localStorage.getItem('cartCount') || '0') + 1;
+              localStorage.setItem('cartCount', String(cartCount));
+              window.dispatchEvent(new StorageEvent('storage', { key: 'cartCount', newValue: String(cartCount) }));
+              setTimeout(() => { button.textContent = originalText || '加入购物车'; button.disabled = false; }, 1500);
+            } else {
+              button.textContent = originalText || '加入购物车'; button.disabled = false;
+            }
+          } catch { button.textContent = originalText || '加入购物车'; button.disabled = false; }
+        });
+      });
+    } catch (e) {
+      grid.innerHTML = '<div class="col-span-4 text-center py-16 text-gray-400">加载失败，请刷新重试</div>';
+    }
+  }
+
+  async function loadCategories() {
+    try {
+      const res = await fetch('/api/categories', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const categories = data.categories || data || [];
+
+      const sidebar = document.getElementById('sidebar-categories');
+      const mobileSelect = document.getElementById('mobile-category') as HTMLSelectElement;
+
+      categories.forEach((cat: any) => {
+        if (sidebar) {
+          const a = document.createElement('a');
+          a.href = '#';
+          a.className = 'block px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-primary-light hover:text-primary transition-colors category-link';
+          a.dataset.slug = cat.slug;
+          a.textContent = `${cat.icon || ''} ${cat.name}`;
+          a.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentParams.category = cat.slug;
+            currentParams.page = 1;
+            document.querySelectorAll('.category-link').forEach(l => l.classList.remove('bg-primary-light', 'text-primary'));
+            a.classList.add('bg-primary-light', 'text-primary');
+            loadProducts();
+          });
+          sidebar.appendChild(a);
+        }
+
+        if (mobileSelect) {
+          const opt = document.createElement('option');
+          opt.value = cat.slug;
+          opt.textContent = cat.name;
+          mobileSelect.appendChild(opt);
+        }
+      });
+    } catch (e) {}
+  }
+
+  // 初始化 URL 参数
+  const urlParams = new URLSearchParams(window.location.search);
+  currentParams.category = urlParams.get('category') || '';
+  currentParams.q = urlParams.get('q') || '';
+  currentParams.sort = urlParams.get('sort') || 'default';
+  currentParams.page = parseInt(urlParams.get('page') || '1');
+
+  // 搜索提示
+  if (currentParams.q) {
+    const hint = document.getElementById('search-hint');
+    if (hint) {
+      hint.textContent = `搜索"${currentParams.q}"的结果`;
+      hint.classList.remove('hidden');
+    }
+  }
+
+  // 排序按钮
+  document.querySelectorAll('.sort-btn').forEach(btn => {
+    const sort = (btn as HTMLButtonElement).dataset.sort;
+    if (sort === currentParams.sort) {
+      btn.classList.add('border-primary', 'text-primary', 'bg-primary-light');
+    }
+    btn.addEventListener('click', () => {
+      currentParams.sort = sort || 'default';
+      currentParams.page = 1;
+      document.querySelectorAll('.sort-btn').forEach(b => {
+        b.classList.remove('border-primary', 'text-primary', 'bg-primary-light');
+      });
+      btn.classList.add('border-primary', 'text-primary', 'bg-primary-light');
+      loadProducts();
+    });
+  });
+
+  // 移动端分类选择
+  document.getElementById('mobile-category')?.addEventListener('change', (e) => {
+    currentParams.category = (e.target as HTMLSelectElement).value;
+    currentParams.page = 1;
+    loadProducts();
+  });
+
+  loadCategories();
+  loadProducts();
+</script>

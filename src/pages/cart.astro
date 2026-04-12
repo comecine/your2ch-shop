@@ -1,0 +1,329 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="购物车">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">购物车</h1>
+
+    <!-- 加载状态 -->
+    <div id="cart-loading" class="flex items-center justify-center py-16">
+      <svg class="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+      </svg>
+    </div>
+
+    <!-- 空购物车 -->
+    <div id="cart-empty" class="hidden text-center py-24">
+      <div class="text-7xl mb-4">🛒</div>
+      <h2 class="text-xl font-medium text-gray-700 mb-2">购物车是空的</h2>
+      <p class="text-gray-500 mb-6">去选购一些好物吧~</p>
+      <a href="/products" class="btn-primary">去选购</a>
+    </div>
+
+    <!-- 购物车内容 -->
+    <div id="cart-content" class="hidden">
+      <div class="flex flex-col lg:flex-row gap-6">
+        <!-- 左侧：商品列表 -->
+        <div class="flex-1">
+          <!-- 表头 -->
+          <div class="card p-4 mb-3 hidden md:grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 items-center text-sm text-gray-500 font-medium">
+            <div class="flex items-center gap-2">
+              <input type="checkbox" id="select-all" class="w-4 h-4 accent-primary cursor-pointer" />
+              <label for="select-all" class="cursor-pointer">全选</label>
+            </div>
+            <div>商品信息</div>
+            <div class="text-center w-24">单价</div>
+            <div class="text-center w-28">数量</div>
+            <div class="text-center w-20">小计</div>
+          </div>
+
+          <!-- 商品列表 -->
+          <div id="cart-items" class="space-y-3"></div>
+        </div>
+
+        <!-- 右侧：订单摘要 -->
+        <div class="w-full lg:w-80 flex-shrink-0">
+          <div class="card p-5 sticky top-24">
+            <h3 class="font-semibold text-gray-800 mb-4 pb-3 border-b border-gray-100">订单摘要</h3>
+
+            <div class="space-y-3 mb-4">
+              <div class="flex justify-between text-sm text-gray-600">
+                <span>已选商品 (<span id="selected-count">0</span> 件)</span>
+                <span>¥<span id="subtotal">0.00</span></span>
+              </div>
+              <div class="flex justify-between text-sm text-gray-600">
+                <span>运费</span>
+                <span id="shipping-text" class="text-primary font-medium">满99元包邮</span>
+              </div>
+            </div>
+
+            <div class="flex justify-between font-bold text-lg pt-3 border-t border-gray-100 mb-5">
+              <span>合计</span>
+              <span class="text-red-500">¥<span id="total">0.00</span></span>
+            </div>
+
+            <button id="checkout-btn" class="w-full btn-primary py-3 text-base" disabled>
+              去结算 (<span id="checkout-count">0</span> 件)
+            </button>
+
+            <div class="mt-4 text-xs text-gray-400 text-center">
+              满 ¥99 免运费，当前不满则收取 ¥10 运费
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</MainLayout>
+
+<script>
+  interface CartItem {
+    id: number;
+    product_id: number;
+    product_name: string;
+    product_slug: string;
+    product_image: string;
+    price: number;
+    quantity: number;
+    stock: number;
+  }
+
+  let cartItems: CartItem[] = [];
+  let selectedIds = new Set<number>();
+
+  async function loadCart() {
+    try {
+      const res = await fetch('/api/cart', { credentials: 'include' });
+      document.getElementById('cart-loading')!.classList.add('hidden');
+
+      if (res.status === 401) {
+        window.location.href = '/account/login?redirect=/cart';
+        return;
+      }
+
+      if (!res.ok) throw new Error('Failed');
+      const data = await res.json();
+      cartItems = data.items || data || [];
+
+      if (!cartItems.length) {
+        document.getElementById('cart-empty')!.classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('cart-content')!.classList.remove('hidden');
+      selectedIds = new Set(cartItems.map(item => item.id));
+      renderCart();
+    } catch (e) {
+      document.getElementById('cart-loading')!.innerHTML = '<div class="text-center py-16 text-gray-400">加载失败，请刷新重试</div>';
+    }
+  }
+
+  function renderCart() {
+    const container = document.getElementById('cart-items')!;
+    container.innerHTML = cartItems.map(item => `
+      <div class="card p-4" data-item-id="${item.id}">
+        <div class="flex items-start gap-4">
+          <!-- 复选框 -->
+          <div class="flex items-center pt-1">
+            <input type="checkbox" class="item-checkbox w-4 h-4 accent-primary cursor-pointer"
+              data-id="${item.id}" ${selectedIds.has(item.id) ? 'checked' : ''} />
+          </div>
+
+          <!-- 商品图 -->
+          <a href="/products/${item.product_slug}" class="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-50 block">
+            <img src="${item.product_image || 'https://placehold.co/80x80/dcfce7/16a34a?text=图片'}"
+              alt="${item.product_name}"
+              class="w-full h-full object-cover"
+              onerror="this.src='https://placehold.co/80x80/dcfce7/16a34a?text=图片'"
+            />
+          </a>
+
+          <!-- 商品信息 -->
+          <div class="flex-1 min-w-0">
+            <a href="/products/${item.product_slug}" class="text-sm text-gray-800 hover:text-primary transition-colors line-clamp-2 font-medium">
+              ${item.product_name}
+            </a>
+            <div class="text-red-500 font-bold mt-1">¥${parseFloat(String(item.price)).toFixed(2)}</div>
+
+            <!-- 移动端：数量控制 -->
+            <div class="flex items-center justify-between mt-3">
+              <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                <button class="qty-minus w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 text-lg" data-id="${item.id}">−</button>
+                <input type="number" class="qty-input w-10 h-8 text-center text-sm border-x border-gray-300 focus:outline-none" value="${item.quantity}" min="1" max="${item.stock}" data-id="${item.id}" />
+                <button class="qty-plus w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 text-lg" data-id="${item.id}" ${item.quantity >= item.stock ? 'disabled' : ''}>+</button>
+              </div>
+              <div class="text-sm font-bold text-gray-800">
+                ¥${(parseFloat(String(item.price)) * item.quantity).toFixed(2)}
+              </div>
+              <button class="delete-btn text-xs text-red-400 hover:text-red-600 transition-colors flex items-center gap-1" data-id="${item.id}">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                删除
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    bindCartEvents();
+    updateSummary();
+  }
+
+  function updateSummary() {
+    const selected = cartItems.filter(item => selectedIds.has(item.id));
+    const count = selected.reduce((sum, item) => sum + item.quantity, 0);
+    const subtotal = selected.reduce((sum, item) => sum + parseFloat(String(item.price)) * item.quantity, 0);
+    const shipping = subtotal >= 99 || subtotal === 0 ? 0 : 10;
+    const total = subtotal + shipping;
+
+    document.getElementById('selected-count')!.textContent = String(count);
+    document.getElementById('subtotal')!.textContent = subtotal.toFixed(2);
+    document.getElementById('total')!.textContent = total.toFixed(2);
+    document.getElementById('checkout-count')!.textContent = String(count);
+
+    const shippingText = document.getElementById('shipping-text')!;
+    if (subtotal === 0) {
+      shippingText.textContent = '满99元包邮';
+      shippingText.className = 'text-gray-400';
+    } else if (subtotal >= 99) {
+      shippingText.textContent = '免运费';
+      shippingText.className = 'text-primary font-medium';
+    } else {
+      shippingText.textContent = `¥10.00（还差¥${(99 - subtotal).toFixed(2)}包邮）`;
+      shippingText.className = 'text-orange-500';
+    }
+
+    const checkoutBtn = document.getElementById('checkout-btn') as HTMLButtonElement;
+    checkoutBtn.disabled = count === 0;
+
+    // 全选复选框状态
+    const selectAll = document.getElementById('select-all') as HTMLInputElement;
+    if (selectAll) {
+      selectAll.checked = cartItems.length > 0 && selectedIds.size === cartItems.length;
+      selectAll.indeterminate = selectedIds.size > 0 && selectedIds.size < cartItems.length;
+    }
+
+    // 更新 localStorage 购物车数量
+    const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    localStorage.setItem('cartCount', String(totalItems));
+    window.dispatchEvent(new StorageEvent('storage', { key: 'cartCount', newValue: String(totalItems) }));
+  }
+
+  function bindCartEvents() {
+    // 单项复选框
+    document.querySelectorAll('.item-checkbox').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const id = parseInt((e.target as HTMLInputElement).dataset.id || '0');
+        if ((e.target as HTMLInputElement).checked) {
+          selectedIds.add(id);
+        } else {
+          selectedIds.delete(id);
+        }
+        updateSummary();
+      });
+    });
+
+    // 数量减少
+    document.querySelectorAll('.qty-minus').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = parseInt((e.currentTarget as HTMLButtonElement).dataset.id || '0');
+        const item = cartItems.find(i => i.id === id);
+        if (!item || item.quantity <= 1) return;
+        await updateQuantity(id, item.quantity - 1);
+      });
+    });
+
+    // 数量增加
+    document.querySelectorAll('.qty-plus').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = parseInt((e.currentTarget as HTMLButtonElement).dataset.id || '0');
+        const item = cartItems.find(i => i.id === id);
+        if (!item || item.quantity >= item.stock) return;
+        await updateQuantity(id, item.quantity + 1);
+      });
+    });
+
+    // 输入框变化
+    document.querySelectorAll('.qty-input').forEach(input => {
+      input.addEventListener('change', async (e) => {
+        const el = e.target as HTMLInputElement;
+        const id = parseInt(el.dataset.id || '0');
+        const item = cartItems.find(i => i.id === id);
+        let val = parseInt(el.value);
+        if (isNaN(val) || val < 1) val = 1;
+        if (item && val > item.stock) val = item.stock;
+        el.value = String(val);
+        await updateQuantity(id, val);
+      });
+    });
+
+    // 删除按钮
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = parseInt((e.currentTarget as HTMLButtonElement).dataset.id || '0');
+        if (!confirm('确定要从购物车中删除这件商品吗？')) return;
+        await deleteItem(id);
+      });
+    });
+  }
+
+  async function updateQuantity(cartItemId: number, quantity: number) {
+    try {
+      const res = await fetch(`/api/cart/${cartItemId}`, {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity })
+      });
+      if (res.ok) {
+        const item = cartItems.find(i => i.id === cartItemId);
+        if (item) {
+          item.quantity = quantity;
+          renderCart();
+        }
+      }
+    } catch (e) {}
+  }
+
+  async function deleteItem(cartItemId: number) {
+    try {
+      const res = await fetch(`/api/cart/${cartItemId}`, {
+        method: 'DELETE', credentials: 'include'
+      });
+      if (res.ok) {
+        cartItems = cartItems.filter(i => i.id !== cartItemId);
+        selectedIds.delete(cartItemId);
+        if (!cartItems.length) {
+          document.getElementById('cart-content')!.classList.add('hidden');
+          document.getElementById('cart-empty')!.classList.remove('hidden');
+        } else {
+          renderCart();
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 全选
+  document.getElementById('select-all')?.addEventListener('change', (e) => {
+    const checked = (e.target as HTMLInputElement).checked;
+    if (checked) {
+      cartItems.forEach(item => selectedIds.add(item.id));
+    } else {
+      selectedIds.clear();
+    }
+    renderCart();
+  });
+
+  // 去结算
+  document.getElementById('checkout-btn')?.addEventListener('click', () => {
+    const selectedItemIds = Array.from(selectedIds);
+    if (!selectedItemIds.length) return;
+    sessionStorage.setItem('checkout_items', JSON.stringify(selectedItemIds));
+    window.location.href = '/checkout';
+  });
+
+  loadCart();
+</script>

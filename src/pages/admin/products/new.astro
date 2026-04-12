@@ -1,0 +1,206 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="新增商品">
+  <div class="max-w-3xl">
+    <div class="flex items-center gap-3 mb-5">
+      <a href="/admin/products/" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      </a>
+      <h2 class="text-lg font-semibold text-gray-800">新增商品</h2>
+    </div>
+
+    <div id="error-msg" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600"></div>
+    <div id="success-msg" class="hidden mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-600"></div>
+
+    <form id="product-form" class="space-y-5">
+      <div class="card p-5 space-y-4">
+        <h3 class="font-medium text-gray-700 border-b border-gray-100 pb-2">基本信息</h3>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">商品名称 <span class="text-red-500">*</span></label>
+          <input type="text" id="prod-name" class="input-field" placeholder="请输入商品名称" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">
+            商品 Slug <span class="text-red-500">*</span>
+            <span class="text-xs text-gray-400 font-normal ml-1">（URL路径，仅字母数字和连字符）</span>
+          </label>
+          <input type="text" id="prod-slug" class="input-field font-mono" placeholder="e.g. bamboo-fiber-cloth" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">商品分类</label>
+          <select id="prod-category" class="input-field">
+            <option value="">请选择分类</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card p-5 space-y-4">
+        <h3 class="font-medium text-gray-700 border-b border-gray-100 pb-2">价格与库存</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">售价（元）<span class="text-red-500">*</span></label>
+            <input type="number" id="prod-price" class="input-field" placeholder="0.00" step="0.01" min="0" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">原价（元）</label>
+            <input type="number" id="prod-original-price" class="input-field" placeholder="0.00（选填）" step="0.01" min="0" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">库存数量 <span class="text-red-500">*</span></label>
+            <input type="number" id="prod-stock" class="input-field" placeholder="0" min="0" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-5 space-y-4">
+        <h3 class="font-medium text-gray-700 border-b border-gray-100 pb-2">商品图片</h3>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">主图 URL</label>
+          <input type="url" id="prod-main-image" class="input-field" placeholder="https://..." />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">图片列表（每行一个URL）</label>
+          <textarea id="prod-images" class="input-field" rows="4" placeholder="https://image1.jpg&#10;https://image2.jpg&#10;..."></textarea>
+          <p class="text-xs text-gray-400 mt-1">每行输入一个图片URL，主图会自动包含在内</p>
+        </div>
+      </div>
+
+      <div class="card p-5 space-y-4">
+        <h3 class="font-medium text-gray-700 border-b border-gray-100 pb-2">商品描述</h3>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">详细描述</label>
+          <textarea id="prod-description" class="input-field" rows="6" placeholder="支持 HTML 格式，描述商品特点、材质、使用方法等..."></textarea>
+        </div>
+      </div>
+
+      <div class="card p-5 space-y-4">
+        <h3 class="font-medium text-gray-700 border-b border-gray-100 pb-2">发布设置</h3>
+        <div class="flex items-center gap-3">
+          <select id="prod-status" class="input-field max-w-xs">
+            <option value="active">立即上架</option>
+            <option value="inactive">暂不上架</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit" id="submit-btn" class="btn-primary px-8">保存商品</button>
+        <a href="/admin/products/" class="btn-outline px-8">取消</a>
+      </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  // 加载分类
+  async function loadCategories() {
+    try {
+      const res = await fetch('/api/admin/categories', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const categories = data.categories || data || [];
+      const select = document.getElementById('prod-category') as HTMLSelectElement;
+      categories.forEach((cat: any) => {
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = cat.name;
+        select.appendChild(opt);
+      });
+    } catch {}
+  }
+
+  // 自动生成 slug
+  document.getElementById('prod-name')?.addEventListener('input', (e) => {
+    const name = (e.target as HTMLInputElement).value;
+    const slugInput = document.getElementById('prod-slug') as HTMLInputElement;
+    if (!slugInput.dataset.manual) {
+      // 转拼音（简单版：数字字母保留，其他转-）
+      const slug = name.toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        || 'product-' + Date.now();
+      slugInput.value = slug;
+    }
+  });
+
+  document.getElementById('prod-slug')?.addEventListener('input', (e) => {
+    const el = e.target as HTMLInputElement;
+    el.dataset.manual = '1';
+    el.value = el.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+  });
+
+  document.getElementById('product-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorEl = document.getElementById('error-msg')!;
+    const successEl = document.getElementById('success-msg')!;
+    const btn = document.getElementById('submit-btn') as HTMLButtonElement;
+    errorEl.classList.add('hidden');
+    successEl.classList.add('hidden');
+
+    const name = (document.getElementById('prod-name') as HTMLInputElement).value.trim();
+    const slug = (document.getElementById('prod-slug') as HTMLInputElement).value.trim();
+    const price = parseFloat((document.getElementById('prod-price') as HTMLInputElement).value);
+    const stock = parseInt((document.getElementById('prod-stock') as HTMLInputElement).value);
+    const originalPrice = parseFloat((document.getElementById('prod-original-price') as HTMLInputElement).value) || null;
+    const categoryId = (document.getElementById('prod-category') as HTMLSelectElement).value;
+    const mainImage = (document.getElementById('prod-main-image') as HTMLInputElement).value.trim();
+    const imagesText = (document.getElementById('prod-images') as HTMLTextAreaElement).value.trim();
+    const description = (document.getElementById('prod-description') as HTMLTextAreaElement).value.trim();
+    const status = (document.getElementById('prod-status') as HTMLSelectElement).value;
+
+    if (!name || !slug || isNaN(price) || isNaN(stock)) {
+      errorEl.textContent = '请填写商品名称、Slug、售价和库存';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    const images = imagesText ? imagesText.split('\n').map(s => s.trim()).filter(Boolean) : [];
+    if (mainImage && !images.includes(mainImage)) images.unshift(mainImage);
+
+    btn.disabled = true;
+    btn.textContent = '保存中...';
+
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name, slug, price, stock,
+          original_price: originalPrice,
+          category_id: categoryId ? parseInt(categoryId) : null,
+          main_image: mainImage || images[0] || null,
+          images,
+          description,
+          status
+        })
+      });
+
+      if (res.ok) {
+        successEl.textContent = '商品保存成功！';
+        successEl.classList.remove('hidden');
+        setTimeout(() => window.location.href = '/admin/products/', 1000);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        errorEl.textContent = d.message || '保存失败，请重试';
+        errorEl.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = '保存商品';
+      }
+    } catch {
+      errorEl.textContent = '网络错误';
+      errorEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = '保存商品';
+    }
+  });
+
+  loadCategories();
+</script>
