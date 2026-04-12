@@ -39,8 +39,11 @@ export const POST: APIRoute = async (context) => {
     const headers = new Headers({
       'Content-Type': 'application/json',
       ...corsHeaders,
-      'Set-Cookie': `admin_token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Lax`,
     });
+    // HttpOnly token（安全用）
+    headers.append('Set-Cookie', `admin_token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Lax`);
+    // JS 可讀的 flag（供 AdminLayout client-side 檢查用）
+    headers.append('Set-Cookie', `admin_logged_in=1; Path=/; Max-Age=86400; SameSite=Lax`);
 
     return new Response(JSON.stringify({
       success: true,

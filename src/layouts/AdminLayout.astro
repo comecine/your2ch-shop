@@ -132,9 +132,9 @@ const { title = '管理后台' } = Astro.props;
 </html>
 
 <script>
-  // 检查 admin token
-  const adminToken = document.cookie.includes('admin_token=');
-  if (!adminToken && !window.location.pathname.includes('/admin/login')) {
+  // 检查 admin 登录状态（admin_logged_in 是可被 JS 读取的 flag cookie）
+  const isLoggedIn = document.cookie.includes('admin_logged_in=1');
+  if (!isLoggedIn && !window.location.pathname.includes('/admin/login')) {
     window.location.href = '/admin/login';
   }
 
@@ -150,7 +150,7 @@ const { title = '管理后台' } = Astro.props;
 
   // 退出登录
   document.getElementById('admin-logout')?.addEventListener('click', async () => {
-    document.cookie = 'admin_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'admin_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     try {
       await fetch('/api/admin/auth/logout', { method: 'POST', credentials: 'include' });
     } catch (e) {}
