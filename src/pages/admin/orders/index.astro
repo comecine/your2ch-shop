@@ -64,15 +64,16 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       const totalPages = data.data?.totalPages || 1;
 
       tbody.innerHTML = orders.length ? orders.map((o: any) => {
-        const items = o.items || [];
+        const firstItem = o.first_item_name || '-';
+        const itemCount = o.item_count || 0;
         return `
           <tr>
             <td class="font-mono text-xs">${o.order_no || o.id}</td>
             <td class="text-sm">${o.username || o.user_id || '-'}</td>
-            <td class="text-sm text-gray-500">${items[0]?.product_name || '-'}${items.length > 1 ? ` 等${items.length}件` : ''}</td>
+            <td class="text-sm text-gray-500">${firstItem}${itemCount > 1 ? ` 等${itemCount}件` : ''}</td>
             <td class="font-bold">¥${parseFloat(o.total_amount).toFixed(2)}</td>
             <td><span class="${statusClass[o.status] || 'badge-gray'}">${statusMap[o.status] || o.status}</span></td>
-            <td class="text-xs text-gray-400">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td>
+            <td class="text-xs text-gray-400">${new Date(o.created_at * 1000).toLocaleDateString('zh-CN')}</td>
             <td><a href="/admin/orders/${o.id}" class="text-primary text-xs hover:underline">查看/操作</a></td>
           </tr>
         `;

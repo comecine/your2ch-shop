@@ -29,7 +29,9 @@ export const GET: APIRoute = async (context) => {
     const total = countRow?.total || 0;
 
     const orders = await db.prepare(
-      `SELECT o.*, u.username, u.email
+      `SELECT o.*, u.username, u.email,
+              (SELECT product_name FROM order_items WHERE order_id = o.id LIMIT 1) AS first_item_name,
+              (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) AS item_count
        FROM orders o
        LEFT JOIN users u ON o.user_id = u.id
        WHERE ${where}
