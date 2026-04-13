@@ -15,15 +15,16 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           <tr>
             <th>ID</th>
             <th>用户名</th>
-            <th>邮箱</th>
-            <th>手机</th>
+            <th>邮箱 / 手机</th>
+            <th>等级 / 积分</th>
+            <th>默认地址</th>
             <th>状态</th>
             <th>注册时间</th>
             <th>操作</th>
           </tr>
         </thead>
         <tbody id="users-table">
-          <tr><td colspan="7" class="text-center py-8 text-gray-400">加载中...</td></tr>
+          <tr><td colspan="8" class="text-center py-8 text-gray-400">加载中...</td></tr>
         </tbody>
       </table>
     </div>
@@ -36,53 +37,78 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
   let currentPage = 1;
   let searchQuery = '';
 
+  const levelLabel: Record<string, string> = { normal: '普通', silver: '银牌', gold: '金牌', diamond: '钻石' };
+  const levelClass: Record<string, string> = {
+    normal: 'bg-gray-100 text-gray-600',
+    silver: 'bg-gray-200 text-gray-700',
+    gold: 'bg-yellow-100 text-yellow-700',
+    diamond: 'bg-blue-100 text-blue-700',
+  };
+
   async function loadUsers() {
     const tbody = document.getElementById('users-table')!;
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">加载中...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8"><svg class="w-6 h-6 animate-spin text-primary mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg></td></tr>';
 
     try {
       const params = new URLSearchParams({ page: String(currentPage), limit: '15' });
-      if (searchQuery) params.set('q', searchQuery);
+      if (searchQuery) params.set('search', searchQuery);
       const res = await fetch(`/api/admin/users?${params}`, { credentials: 'include' });
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       const data = await res.json();
-      const users = data.users || data || [];
-      const totalPages = data.total_pages || 1;
+      const users = data.data?.users || [];
+      const totalPages = data.data?.totalPages || 1;
 
-      tbody.innerHTML = users.length ? users.map((u: any) => `
-        <tr>
-          <td class="text-xs text-gray-400">${u.id}</td>
-          <td class="font-medium">${u.username}</td>
-          <td class="text-sm text-gray-600">${u.email || '-'}</td>
-          <td class="text-sm text-gray-600">${u.phone || '-'}</td>
-          <td>
-            <button
-              class="toggle-status ${u.is_active !== false && u.status !== 'inactive' ? 'badge-green cursor-pointer hover:bg-red-100 hover:text-red-600' : 'badge-red cursor-pointer hover:bg-green-100 hover:text-green-600'} transition-colors"
-              data-id="${u.id}"
-              data-active="${u.is_active !== false && u.status !== 'inactive'}"
-            >
-              ${u.is_active !== false && u.status !== 'inactive' ? '正常' : '已停用'}
-            </button>
-          </td>
-          <td class="text-xs text-gray-400">${new Date(u.created_at).toLocaleDateString('zh-CN')}</td>
-          <td>
-            <div class="flex gap-2">
-              <button class="text-xs text-primary hover:underline view-orders" data-id="${u.id}">查看订单</button>
-            </div>
-          </td>
-        </tr>
-      `).join('') : '<tr><td colspan="7" class="text-center py-8 text-gray-400">暂无用户</td></tr>';
+      tbody.innerHTML = users.length ? users.map((u: any) => {
+        const isActive = u.status === 'active';
+        const lvl = u.level || 'normal';
+        const defaultAddr = u.default_address || '-';
+        return `
+          <tr>
+            <td class="text-xs text-gray-400">${u.id}</td>
+            <td>
+              <div class="font-medium">${u.username}</div>
+              ${u.nickname ? `<div class="text-xs text-gray-400">${u.nickname}</div>` : ''}
+            </td>
+            <td class="text-sm">
+              <div class="text-gray-600">${u.email || '-'}</div>
+              <div class="text-gray-400 text-xs">${u.phone || '-'}</div>
+            </td>
+            <td>
+              <span class="badge ${levelClass[lvl]} text-xs px-2 py-0.5 rounded-full">${levelLabel[lvl]}</span>
+              <div class="text-xs text-gray-400 mt-0.5">${u.points || 0} 积分</div>
+            </td>
+            <td class="text-xs text-gray-500 max-w-[200px] truncate" title="${defaultAddr}">${defaultAddr}</td>
+            <td>
+              <button
+                class="toggle-status text-xs px-2 py-1 rounded-full font-medium transition-colors ${isActive ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600' : 'bg-red-100 text-red-600 hover:bg-green-100 hover:text-green-700'}"
+                data-id="${u.id}"
+                data-status="${u.status}"
+              >
+                ${isActive ? '正常' : (u.status === 'pending' ? '待审核' : '已停用')}
+              </button>
+            </td>
+            <td class="text-xs text-gray-400">${new Date(u.created_at * 1000).toLocaleDateString('zh-CN')}</td>
+            <td>
+              <div class="flex gap-2">
+                <button class="text-xs text-primary hover:underline view-orders" data-id="${u.id}">订单</button>
+                <button class="text-xs text-gray-500 hover:underline view-addresses" data-id="${u.id}" data-name="${u.username}">地址</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('') : '<tr><td colspan="8" class="text-center py-8 text-gray-400">暂无用户</td></tr>';
 
       // 切换状态
       tbody.querySelectorAll('.toggle-status').forEach(btn => {
         btn.addEventListener('click', async () => {
           const id = (btn as HTMLButtonElement).dataset.id;
-          const isActive = (btn as HTMLButtonElement).dataset.active === 'true';
+          const currentStatus = (btn as HTMLButtonElement).dataset.status;
+          const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
           try {
             const res = await fetch(`/api/admin/users/${id}`, {
               method: 'PUT', credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ is_active: !isActive })
+              body: JSON.stringify({ status: newStatus })
             });
             if (res.ok) loadUsers();
           } catch {}
@@ -91,15 +117,48 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 
       tbody.querySelectorAll('.view-orders').forEach(btn => {
         btn.addEventListener('click', () => {
+          window.location.href = `/admin/orders/?user_id=${(btn as HTMLButtonElement).dataset.id}`;
+        });
+      });
+
+      // 地址弹窗
+      tbody.querySelectorAll('.view-addresses').forEach(btn => {
+        btn.addEventListener('click', async () => {
           const id = (btn as HTMLButtonElement).dataset.id;
-          window.location.href = `/admin/orders/?user_id=${id}`;
+          const name = (btn as HTMLButtonElement).dataset.name;
+          const res = await fetch(`/api/admin/users/${id}/addresses`, { credentials: 'include' });
+          const d = await res.json();
+          const addrs = d.data?.addresses || [];
+          const content = addrs.length
+            ? addrs.map((a: any) => `<div class="mb-2 p-2 bg-gray-50 rounded text-sm">${a.is_default ? '<span class="text-xs text-green-600 font-medium">[默认] </span>' : ''}${a.name} ${a.phone}<br/>${a.province}${a.city}${a.district}${a.detail}</div>`).join('')
+            : '<p class="text-gray-400 text-sm">暂无地址</p>';
+          showModal(`${name} 的收货地址`, content);
         });
       });
 
       renderPagination(currentPage, totalPages);
-    } catch {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">加载失败</td></tr>';
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-400">加载失败</td></tr>';
     }
+  }
+
+  function showModal(title: string, content: string) {
+    document.getElementById('addr-modal')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'addr-modal';
+    modal.className = 'fixed inset-0 bg-black/40 flex items-center justify-center z-50';
+    modal.innerHTML = `
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 mx-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-gray-800">${title}</h3>
+          <button id="close-modal" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <div>${content}</div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('close-modal')?.addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
   }
 
   function renderPagination(current: number, total: number) {

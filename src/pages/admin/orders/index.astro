@@ -60,8 +60,8 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       const res = await fetch(`/api/admin/orders?${params}`, { credentials: 'include' });
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       const data = await res.json();
-      const orders = data.orders || data || [];
-      const totalPages = data.total_pages || 1;
+      const orders = data.data?.orders || [];
+      const totalPages = data.data?.totalPages || 1;
 
       tbody.innerHTML = orders.length ? orders.map((o: any) => {
         const items = o.items || [];

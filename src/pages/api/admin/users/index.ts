@@ -16,27 +16,32 @@ export const GET: APIRoute = async (context) => {
     const search = url.searchParams.get('search') || '';
     const offset = (page - 1) * limit;
 
-    let where = '1=1';
+    let where = 'u.id != 0';
     const params: unknown[] = [];
 
     if (status) {
-      where += ' AND status = ?';
+      where += ' AND u.status = ?';
       params.push(status);
     }
     if (search) {
-      where += ' AND (email LIKE ? OR username LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
+      where += ' AND (u.email LIKE ? OR u.username LIKE ? OR u.phone LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
     const countRow = await db.prepare(
-      `SELECT COUNT(*) as total FROM users WHERE ${where}`
+      `SELECT COUNT(*) as total FROM users u WHERE ${where}`
     ).bind(...params).first() as { total: number } | null;
     const total = countRow?.total || 0;
 
     const users = await db.prepare(
-      `SELECT id, username, email, phone, status, created_at, updated_at
-       FROM users WHERE ${where}
-       ORDER BY created_at DESC
+      `SELECT u.id, u.username, u.nickname, u.email, u.phone, u.gender, u.birthday,
+              u.points, u.level, u.status, u.created_at, u.updated_at,
+              a.province || a.city || a.district || a.detail AS default_address
+       FROM users u
+       LEFT JOIN addresses a ON a.user_id = u.id AND a.is_default = 1
+       WHERE ${where}
+       GROUP BY u.id
+       ORDER BY u.created_at DESC
        LIMIT ? OFFSET ?`
     ).bind(...params, limit, offset).all();
 
