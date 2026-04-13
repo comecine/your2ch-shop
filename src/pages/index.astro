@@ -7,12 +7,12 @@ import MainLayout from '../layouts/MainLayout.astro';
   <section class="relative bg-gray-900 overflow-hidden" style="min-height: 460px;">
     <div id="banner-container" class="relative w-full" style="height: 460px;">
       <div id="banner-loading" class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-green-900 via-green-800 to-emerald-700">
-        <div class="text-center text-white">
+        <div class="text-center text-white px-4">
           <div class="text-5xl font-bold mb-3 tracking-tight">绿巢生活館</div>
-          <div class="text-xl opacity-75 font-light">自然好物 · 呵护每个家庭</div>
+          <div class="text-xl opacity-75 font-light">家，是你唯一不需要表演的地方</div>
           <div class="mt-8">
             <a href="/products" class="inline-block bg-white text-primary font-semibold px-10 py-3.5 rounded-full hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 text-sm">
-              立即选购 →
+              来看看有啥好的 →
             </a>
           </div>
         </div>
@@ -28,12 +28,11 @@ import MainLayout from '../layouts/MainLayout.astro';
     </button>
   </section>
 
-  <!-- 品牌优势（紧接 Banner） -->
+  <!-- 品牌优势（紧接 Banner，口语化版本） -->
   <section class="bg-white border-b border-gray-100 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100">
-        <!-- 天然环保 -->
-        <div class="flex items-center gap-3 py-5 px-6 group hover:bg-green-50/50 transition-colors">
+        <div class="flex items-center gap-3 py-5 px-4 md:px-6 group hover:bg-green-50/50 transition-colors">
           <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-light transition-colors">
             <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c-1.2 5.4-5 7-5 11a5 5 0 0010 0c0-4-3.8-5.6-5-11z"/>
@@ -41,44 +40,41 @@ import MainLayout from '../layouts/MainLayout.astro';
             </svg>
           </div>
           <div>
-            <div class="font-semibold text-sm text-gray-800">天然环保</div>
-            <div class="text-xs text-gray-400 mt-0.5">精选天然材质</div>
+            <div class="font-semibold text-sm text-gray-800">只选天然的</div>
+            <div class="text-xs text-gray-400 mt-0.5">用着放心那种</div>
           </div>
         </div>
-        <!-- 品质保障 -->
-        <div class="flex items-center gap-3 py-5 px-6 group hover:bg-green-50/50 transition-colors">
+        <div class="flex items-center gap-3 py-5 px-4 md:px-6 group hover:bg-green-50/50 transition-colors">
           <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
             <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
             </svg>
           </div>
           <div>
-            <div class="font-semibold text-sm text-gray-800">品质保障</div>
-            <div class="text-xs text-gray-400 mt-0.5">严格质量把控</div>
+            <div class="font-semibold text-sm text-gray-800">上架前亲测</div>
+            <div class="text-xs text-gray-400 mt-0.5">掌柜用过才卖</div>
           </div>
         </div>
-        <!-- 满99包邮 -->
-        <div class="flex items-center gap-3 py-5 px-6 group hover:bg-green-50/50 transition-colors">
+        <div class="flex items-center gap-3 py-5 px-4 md:px-6 group hover:bg-green-50/50 transition-colors">
           <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0 group-hover:bg-orange-100 transition-colors">
             <svg class="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
             </svg>
           </div>
           <div>
-            <div class="font-semibold text-sm text-gray-800">满99包邮</div>
-            <div class="text-xs text-gray-400 mt-0.5">快速配送到家</div>
+            <div class="font-semibold text-sm text-gray-800">满99我包邮</div>
+            <div class="text-xs text-gray-400 mt-0.5">不够的话可以凑</div>
           </div>
         </div>
-        <!-- 7天售后 -->
-        <div class="flex items-center gap-3 py-5 px-6 group hover:bg-green-50/50 transition-colors">
+        <div class="flex items-center gap-3 py-5 px-4 md:px-6 group hover:bg-green-50/50 transition-colors">
           <div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0 group-hover:bg-purple-100 transition-colors">
             <svg class="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
             </svg>
           </div>
           <div>
-            <div class="font-semibold text-sm text-gray-800">贴心客服</div>
-            <div class="text-xs text-gray-400 mt-0.5">7天售后保障</div>
+            <div class="font-semibold text-sm text-gray-800">客服是真人</div>
+            <div class="text-xs text-gray-400 mt-0.5">工作日9-18不摆烂</div>
           </div>
         </div>
       </div>
@@ -103,13 +99,12 @@ import MainLayout from '../layouts/MainLayout.astro';
       <div class="section-header mb-0">
         <div class="section-header-bar bg-primary"></div>
         <div>
-          <h2 class="text-xl font-bold text-gray-800 leading-none">热销好物</h2>
-          <p class="text-xs text-gray-400 mt-1">大家都在买</p>
+          <h2 class="text-xl font-bold text-gray-800 leading-none">大家都在买</h2>
+          <p class="text-xs text-gray-400 mt-1">卖得最好的一批</p>
         </div>
       </div>
       <a href="/products?sort=sales" class="text-sm text-primary hover:text-primary-dark transition-colors flex items-center gap-1 font-medium">
-        查看更多
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        查看更多 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
       </a>
     </div>
     <div id="hot-products" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -126,37 +121,117 @@ import MainLayout from '../layouts/MainLayout.astro';
     </div>
   </section>
 
-  <!-- 活动 Banner -->
+  <!-- ★ 掌柜有话说（打破 grid 的特色区块） -->
+  <section class="my-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="relative rounded-3xl overflow-hidden bg-stone-50 border border-stone-100/80">
+        <!-- 顶部彩条 -->
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-400 to-amber-400"></div>
+
+        <div class="p-8 md:p-12">
+          <div class="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
+
+            <!-- 左侧：引言 + 品牌故事 -->
+            <div class="lg:w-[55%]">
+              <!-- 自制巢形插画 -->
+              <div class="mb-5 w-20">
+                <svg viewBox="0 0 100 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- 巢的枝条 -->
+                  <path d="M10 55 Q22 38 40 44 Q52 32 64 42 Q78 30 92 46 Q98 42 98 55" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                  <path d="M6 62 Q30 50 50 53 Q70 50 94 62" stroke="#15803d" stroke-width="3" stroke-linecap="round" fill="none"/>
+                  <path d="M10 67 Q35 58 50 60 Q65 58 90 67" stroke="#16a34a" stroke-width="2" stroke-linecap="round" fill="none"/>
+                  <!-- 巢里的蛋 -->
+                  <ellipse cx="44" cy="50" rx="7" ry="5" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+                  <ellipse cx="56" cy="48" rx="6" ry="4.5" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+                  <!-- 树叶 -->
+                  <path d="M50 26 Q66 10 78 20 Q72 36 50 40 Q44 32 50 26Z" fill="#16a34a" opacity="0.85"/>
+                  <path d="M50 28 L68 36" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+                  <path d="M56 24 L70 28" stroke="white" stroke-width="0.8" stroke-linecap="round" opacity="0.7"/>
+                </svg>
+              </div>
+
+              <blockquote class="text-3xl md:text-[2.2rem] font-bold text-gray-800 leading-tight mb-5">
+                家，是你唯一<br/>
+                <span class="text-primary">不需要表演</span><br/>
+                的地方。
+              </blockquote>
+
+              <p class="text-gray-500 leading-relaxed text-sm md:text-base">
+                所以我们选品只有一个标准——<span class="font-semibold text-gray-700">自己用了觉得好，才敢放出来卖</span>。<br/>
+                不是什么网红款，不跟什么潮流。<br/>
+                就是那种放进家里、每天用到不想换的东西。
+              </p>
+
+              <div class="mt-6 flex items-center gap-3">
+                <div class="w-8 h-px bg-stone-300 rounded-full"></div>
+                <span class="text-sm text-gray-400 italic">绿巢掌柜，亲测推荐</span>
+              </div>
+            </div>
+
+            <!-- 右侧：数字，故意不对齐的排列 -->
+            <div class="lg:w-[45%] w-full flex flex-col gap-3">
+              <div class="flex gap-3">
+                <!-- 宽卡 -->
+                <div class="flex-[1.6] bg-primary rounded-2xl p-5 text-white">
+                  <div class="text-2xl font-bold leading-tight">7天无理由</div>
+                  <div class="text-xs mt-1.5 opacity-70">不好用就退，没废话</div>
+                </div>
+                <!-- 窄卡 -->
+                <div class="flex-1 bg-white rounded-2xl p-5 text-center shadow-sm border border-gray-100">
+                  <div class="text-3xl font-bold text-primary leading-none">102</div>
+                  <div class="text-xs text-gray-400 mt-1.5">精选单品</div>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <!-- 窄卡 -->
+                <div class="flex-1 bg-white rounded-2xl p-5 text-center shadow-sm border border-gray-100">
+                  <div class="text-2xl font-bold text-gray-700 leading-none">¥99</div>
+                  <div class="text-xs text-gray-400 mt-1.5">包邮门槛</div>
+                </div>
+                <!-- 宽卡：amber 暖色，打破配色 -->
+                <div class="flex-[1.6] bg-amber-50 border border-amber-100 rounded-2xl p-5">
+                  <div class="text-2xl font-bold text-amber-600 leading-tight">新人9折</div>
+                  <div class="text-xs text-amber-500/80 mt-1.5">注册就有，不是套路</div>
+                </div>
+              </div>
+              <!-- 全宽横条：独特的横向小标语 -->
+              <div class="bg-gray-800 rounded-2xl px-5 py-3.5 flex items-center justify-between">
+                <span class="text-white text-sm font-medium">每件商品都经过掌柜的手</span>
+                <a href="/products" class="text-primary text-xs font-semibold whitespace-nowrap ml-3 hover:text-emerald-400 transition-colors">去看看 →</a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 活动 Banner（口语化版） -->
   <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-emerald-600 to-green-500 p-6 text-white">
         <div class="relative z-10">
-          <div class="text-xl font-bold mb-1">满99元包邮</div>
-          <div class="text-sm opacity-80 mb-4">全场商品免运费，放心选购</div>
+          <div class="text-xl font-bold mb-1">凑满99，快递费我出</div>
+          <div class="text-sm opacity-80 mb-4">一分不多收，认真的</div>
           <a href="/products" class="inline-block text-sm border border-white/70 px-5 py-2 rounded-full hover:bg-white hover:text-primary transition-all duration-200 font-medium">
-            立即选购
+            去凑单
           </a>
         </div>
         <div class="absolute right-0 top-0 h-full w-32 opacity-10">
-          <svg viewBox="0 0 100 100" class="h-full" fill="white">
-            <circle cx="80" cy="20" r="40"/>
-            <circle cx="20" cy="80" r="25"/>
-          </svg>
+          <svg viewBox="0 0 100 100" class="h-full" fill="white"><circle cx="80" cy="20" r="40"/><circle cx="20" cy="80" r="25"/></svg>
         </div>
       </div>
       <div class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-amber-500 to-orange-400 p-6 text-white">
         <div class="relative z-10">
-          <div class="text-xl font-bold mb-1">新人专享优惠</div>
-          <div class="text-sm opacity-80 mb-4">注册即可享受首单9折</div>
+          <div class="text-xl font-bold mb-1">第一次来？先占便宜</div>
+          <div class="text-sm opacity-80 mb-4">注册送首单9折，不是在骗你</div>
           <a href="/account/register" class="inline-block text-sm border border-white/70 px-5 py-2 rounded-full hover:bg-white hover:text-amber-500 transition-all duration-200 font-medium">
-            立即注册
+            先注册再说
           </a>
         </div>
         <div class="absolute right-0 top-0 h-full w-32 opacity-10">
-          <svg viewBox="0 0 100 100" class="h-full" fill="white">
-            <circle cx="70" cy="30" r="35"/>
-            <circle cx="30" cy="75" r="20"/>
-          </svg>
+          <svg viewBox="0 0 100 100" class="h-full" fill="white"><circle cx="70" cy="30" r="35"/><circle cx="30" cy="75" r="20"/></svg>
         </div>
       </div>
     </div>
@@ -168,13 +243,12 @@ import MainLayout from '../layouts/MainLayout.astro';
       <div class="section-header mb-0">
         <div class="section-header-bar bg-amber-400"></div>
         <div>
-          <h2 class="text-xl font-bold text-gray-800 leading-none">新品上市</h2>
-          <p class="text-xs text-gray-400 mt-1">最新到货</p>
+          <h2 class="text-xl font-bold text-gray-800 leading-none">刚到的新货</h2>
+          <p class="text-xs text-gray-400 mt-1">还没什么评价，但掌柜保证好用</p>
         </div>
       </div>
       <a href="/products?sort=newest" class="text-sm text-primary hover:text-primary-dark transition-colors flex items-center gap-1 font-medium">
-        查看更多
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        查看更多 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
       </a>
     </div>
     <div id="new-products" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -213,9 +287,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       <div class="product-card group">
         <a href="/products/${product.slug}" class="block">
           <div class="relative overflow-hidden bg-gray-50" style="aspect-ratio:1">
-            <img
-              src="${imgSrc}"
-              alt="${product.name}"
+            <img src="${imgSrc}" alt="${product.name}"
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
               onerror="this.src='https://placehold.co/400x400/f0fdf4/16a34a?text=暂无图片'"
@@ -237,9 +309,7 @@ import MainLayout from '../layouts/MainLayout.astro';
         <div class="px-3 pb-3">
           <button
             class="add-to-cart-btn w-full py-2 text-sm font-medium rounded-lg transition-all duration-200
-              ${outOfStock
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-primary-light text-primary hover:bg-primary hover:text-white hover:shadow-md'}"
+              ${outOfStock ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-primary-light text-primary hover:bg-primary hover:text-white hover:shadow-md'}"
             data-product-id="${product.id}"
             ${outOfStock ? 'disabled' : ''}
           >
@@ -274,7 +344,7 @@ import MainLayout from '../layouts/MainLayout.astro';
         slide.innerHTML = `
           <a href="${banner.link_url || '/products'}" class="block w-full h-full">
             <img src="${banner.image_url}" alt="${banner.title || ''}" class="w-full h-full object-cover"
-              onerror="this.parentElement.parentElement.style.background='linear-gradient(135deg, #14532d, #16a34a)'"
+              onerror="this.parentElement.parentElement.style.background='linear-gradient(135deg,#14532d,#16a34a)'"
             />
             ${banner.title ? `
               <div class="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center px-10 md:px-16">
@@ -307,7 +377,6 @@ import MainLayout from '../layouts/MainLayout.astro';
 
       prevBtn.addEventListener('click', () => goToSlide(current - 1));
       nextBtn.addEventListener('click', () => goToSlide(current + 1));
-
       let timer = setInterval(() => goToSlide(current + 1), 4500);
       container.addEventListener('mouseenter', () => clearInterval(timer));
       container.addEventListener('mouseleave', () => { timer = setInterval(() => goToSlide(current + 1), 4500); });
@@ -359,7 +428,7 @@ import MainLayout from '../layouts/MainLayout.astro';
           if (!productId) return;
           const originalText = button.textContent?.trim();
           button.disabled = true;
-          button.textContent = '添加中...';
+          button.textContent = '放进去了...';
           try {
             const res = await fetch('/api/cart', {
               method: 'POST', credentials: 'include',
@@ -369,7 +438,8 @@ import MainLayout from '../layouts/MainLayout.astro';
             if (res.status === 401) { window.location.href = '/account/login?redirect=/'; return; }
             if (res.ok) {
               button.textContent = '✓ 已加入';
-              button.className = button.className.replace('bg-primary-light text-primary', 'bg-green-500 text-white');
+              button.classList.replace('bg-primary-light', 'bg-green-500');
+              button.classList.replace('text-primary', 'text-white');
               const count = parseInt(localStorage.getItem('cartCount') || '0') + 1;
               localStorage.setItem('cartCount', String(count));
               window.dispatchEvent(new StorageEvent('storage', { key: 'cartCount', newValue: String(count) }));
@@ -377,7 +447,8 @@ import MainLayout from '../layouts/MainLayout.astro';
               if (badge) { badge.textContent = count > 99 ? '99+' : String(count); badge.classList.remove('hidden'); }
               setTimeout(() => {
                 button.textContent = originalText || '加入购物车';
-                button.className = button.className.replace('bg-green-500 text-white', 'bg-primary-light text-primary');
+                button.classList.replace('bg-green-500', 'bg-primary-light');
+                button.classList.replace('text-white', 'text-primary');
                 button.disabled = false;
               }, 1800);
             } else {
