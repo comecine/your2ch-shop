@@ -1,0 +1,107 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="退换货政策">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">退换货政策</h1>
+    <p class="text-sm text-gray-400 mb-8">最后更新：2026年1月 &nbsp;|&nbsp; 依据《消费者权益保护法》第二十五条</p>
+
+    <!-- 7天无理由 -->
+    <section class="mb-8 p-6 bg-blue-50 rounded-xl border border-blue-100">
+      <div class="flex items-center gap-3 mb-3">
+        <span class="text-2xl">✅</span>
+        <h2 class="text-lg font-bold text-blue-700">7天无理由退货</h2>
+      </div>
+      <p class="text-gray-700 text-sm leading-relaxed">
+        自您签收商品之日起 <strong>7天内</strong>，支持无理由退货（部分特殊商品除外）。商品需保持<strong>未使用、原包装完好</strong>的状态，退款将在审核通过后 <strong>1～3个工作日</strong> 原路返还。
+      </p>
+    </section>
+
+    <!-- 退货条件 -->
+    <section class="mb-8">
+      <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <span class="w-1 h-5 bg-blue-500 rounded-full inline-block"></span>
+        退货条件
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="p-4 border border-green-200 rounded-xl bg-green-50">
+          <div class="font-medium text-green-700 mb-2">✓ 可申请退货</div>
+          <ul class="text-sm text-gray-600 space-y-1">
+            <li>• 商品存在质量问题或损坏</li>
+            <li>• 发货错误（型号/颜色不符）</li>
+            <li>• 7天内未使用、包装完好</li>
+            <li>• 运输过程造成的外观损坏</li>
+          </ul>
+        </div>
+        <div class="p-4 border border-red-200 rounded-xl bg-red-50">
+          <div class="font-medium text-red-700 mb-2">✗ 不支持退货</div>
+          <ul class="text-sm text-gray-600 space-y-1">
+            <li>• 超过7天退货期</li>
+            <li>• 个人清洁/卫生用品已拆封</li>
+            <li>• 人为损坏或使用痕迹明显</li>
+            <li>• 吊牌/标签已撕毁或包装丢失</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 退换货流程 -->
+    <section class="mb-8">
+      <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <span class="w-1 h-5 bg-blue-500 rounded-full inline-block"></span>
+        退换货流程
+      </h2>
+      <div class="relative">
+        <div class="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+        <div class="space-y-6">
+          {[
+            { step: '1', title: '申请退换货', desc: '登录账号 → 我的订单 → 选择订单 → 申请退款/退货，或发送邮件至 service@your2ch.com，说明订单号及原因。', time: '由您发起' },
+            { step: '2', title: '客服审核', desc: '客服人员将在1个工作日内确认申请，如需提供凭证（如商品损坏照片），请按提示上传。', time: '1个工作日' },
+            { step: '3', title: '寄回商品', desc: '审核通过后，请将商品以原包装寄回指定地址。退货运费由买家承担（质量问题或发货错误由本店承担）。', time: '请在3天内寄出' },
+            { step: '4', title: '退款到账', desc: '收到商品并确认无误后，退款将在1～3个工作日内原路返还至您的支付账户。', time: '1～3个工作日' },
+          ].map(item => (
+            <div class="flex gap-4 relative">
+              <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 z-10">
+                {item.step}
+              </div>
+              <div class="flex-1 pb-2">
+                <div class="font-medium text-gray-800 mb-1">{item.title} <span class="text-xs text-gray-400 ml-2">{item.time}</span></div>
+                <p class="text-sm text-gray-600 leading-relaxed">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- 换货说明 -->
+    <section class="mb-8">
+      <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <span class="w-1 h-5 bg-blue-500 rounded-full inline-block"></span>
+        换货说明
+      </h2>
+      <ul class="space-y-3 text-sm text-gray-600">
+        <li class="flex items-start gap-2">
+          <span class="text-blue-500 mt-0.5">•</span>
+          <span>换货商品需在签收后 <strong>15天内</strong> 申请（需保留原包装及附件）。</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-blue-500 mt-0.5">•</span>
+          <span>因商品质量问题换货，来回运费均由本店承担；非质量原因换货，运费由买家承担。</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-blue-500 mt-0.5">•</span>
+          <span>换货商品库存不足时，将优先安排退款处理。</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- 联系客服 -->
+    <div class="p-4 bg-primary-light rounded-xl text-center">
+      <p class="text-sm text-gray-700">退换货有疑问？联系我们</p>
+      <a href="mailto:service@your2ch.com" class="text-primary font-medium text-sm hover:underline">service@your2ch.com</a>
+      <span class="text-gray-400 text-xs ml-2">客服时间：周一至周日 9:00–18:00</span>
+    </div>
+  </div>
+</MainLayout>

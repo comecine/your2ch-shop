@@ -1,0 +1,140 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="隐私政策">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">隐私政策</h1>
+    <p class="text-sm text-gray-400 mb-8">最后更新：2026年1月 &nbsp;|&nbsp; 依据《中华人民共和国个人信息保护法》</p>
+
+    <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-xl mb-8 text-sm text-gray-700">
+      <strong>重要提示：</strong>在您使用绿巢生活館的服务前，请仔细阅读本政策。使用本平台即表示您同意本政策的条款。
+    </div>
+
+    <div class="prose prose-sm max-w-none text-gray-700 space-y-8">
+
+      <section>
+        <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <span class="w-1 h-5 bg-purple-500 rounded-full inline-block"></span>
+          一、我们收集的信息
+        </h2>
+        <p class="leading-relaxed mb-3">为提供服务，我们可能收集以下信息：</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[
+            { icon: '👤', title: '账户信息', desc: '用户名、手机号、电子邮箱（注册及登录时收集）' },
+            { icon: '📦', title: '收货信息', desc: '收件人姓名、地址、联系电话（下单时收集）' },
+            { icon: '💳', title: '交易信息', desc: '订单详情、支付记录（不存储完整银行卡号）' },
+            { icon: '📱', title: '设备信息', desc: '浏览器类型、IP地址、访问时间（自动收集）' },
+          ].map(item => (
+            <div class="p-3 bg-gray-50 rounded-lg">
+              <div class="font-medium text-gray-800 mb-1">{item.icon} {item.title}</div>
+              <p class="text-xs text-gray-500">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <span class="w-1 h-5 bg-purple-500 rounded-full inline-block"></span>
+          二、信息的使用方式
+        </h2>
+        <ul class="space-y-2">
+          {[
+            '处理订单、安排配送、提供售后服务',
+            '验证账户身份，保障账户安全',
+            '发送订单状态通知及重要服务信息',
+            '优化网站体验，改善商品推荐',
+            '遵守法律法规要求的信息留存义务',
+          ].map(item => (
+            <li class="flex items-start gap-2 text-sm">
+              <span class="text-purple-500 mt-0.5">•</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <span class="w-1 h-5 bg-purple-500 rounded-full inline-block"></span>
+          三、信息共享与披露
+        </h2>
+        <p class="text-sm leading-relaxed mb-3">我们不会向第三方出售您的个人信息。仅在以下情况下共享：</p>
+        <ul class="space-y-2">
+          {[
+            '与快递物流服务商共享配送信息（仅必要内容）',
+            '与支付机构共享交易信息（处理付款）',
+            '依法配合政府机关、司法机关的合法调查',
+          ].map(item => (
+            <li class="flex items-start gap-2 text-sm">
+              <span class="text-purple-500 mt-0.5">•</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <span class="w-1 h-5 bg-purple-500 rounded-full inline-block"></span>
+          四、信息安全
+        </h2>
+        <p class="text-sm leading-relaxed">
+          我们采用行业标准的安全技术（包括 HTTPS 加密传输、密码哈希存储）来保护您的个人信息。然而，互联网传输并非完全安全，请妥善保管您的账户密码，不要将密码告知他人。
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <span class="w-1 h-5 bg-purple-500 rounded-full inline-block"></span>
+          五、Cookie 的使用
+        </h2>
+        <p class="text-sm leading-relaxed">
+          本网站使用 Cookie 记录登录状态和购物车信息，以提供正常的服务功能。您可以通过浏览器设置拒绝 Cookie，但这可能导致部分功能无法正常使用。
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <span class="w-1 h-5 bg-purple-500 rounded-full inline-block"></span>
+          六、您的权利
+        </h2>
+        <p class="text-sm leading-relaxed mb-3">依据《个人信息保护法》，您享有以下权利：</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+          {['查阅权', '更正权', '删除权', '撤回同意权'].map(r => (
+            <div class="p-3 bg-purple-50 rounded-lg font-medium text-purple-700">{r}</div>
+          ))}
+        </div>
+        <p class="text-xs text-gray-500 mt-2">如需行使上述权利，请发送邮件至 service@your2ch.com，我们将在15个工作日内响应。</p>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <span class="w-1 h-5 bg-purple-500 rounded-full inline-block"></span>
+          七、未成年人保护
+        </h2>
+        <p class="text-sm leading-relaxed">
+          本平台不面向14周岁以下未成年人提供服务。如发现我们无意中收集了未成年人信息，请联系我们，我们将立即删除。
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <span class="w-1 h-5 bg-purple-500 rounded-full inline-block"></span>
+          八、政策更新
+        </h2>
+        <p class="text-sm leading-relaxed">
+          本政策如有重大变更，我们将在网站首页或通过注册邮箱提前30天通知您。继续使用本服务视为接受更新后的政策。
+        </p>
+      </section>
+
+    </div>
+
+    <!-- 联系 -->
+    <div class="mt-8 p-4 bg-primary-light rounded-xl text-center">
+      <p class="text-sm text-gray-700">隐私相关疑问请联系我们</p>
+      <a href="mailto:service@your2ch.com" class="text-primary font-medium text-sm hover:underline">service@your2ch.com</a>
+    </div>
+  </div>
+</MainLayout>
